@@ -26,6 +26,10 @@ htmlcov/
 .idea/
 .vscode/
 
+# Claude Code / ruflo tooling (local only)
+.claude/
+.claude-flow/
+
 # Local data
 *.sqlite
 *.db

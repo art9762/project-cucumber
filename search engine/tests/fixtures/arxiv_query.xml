@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <link xmlns="http://www.w3.org/2005/Atom" href="http://arxiv.org/api/query?search_query=cat:cs.AI&amp;id_list=&amp;start=0&amp;max_results=2" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=cat:cs.AI</title>
+  <id>http://arxiv.org/api/nf5G8QJ7REELJb3kH-tl7SuHPXk</id>
+  <updated>2024-03-15T00:00:00-05:00</updated>
+  <opensearch:totalResults>12345</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+
+  <entry>
+    <id>http://arxiv.org/abs/2403.09000v1</id>
+    <updated>2024-03-14T17:59:31Z</updated>
+    <published>2024-03-14T17:59:31Z</published>
+    <title>Attention Is All You Need: Revisited with Sparse Transformers</title>
+    <summary>We revisit the original Transformer architecture and propose a sparse attention
+mechanism that reduces computational complexity from O(n^2) to O(n log n)
+while maintaining state-of-the-art performance on multiple benchmarks. Our
+method achieves significant speedups on long-sequence tasks.</summary>
+    <author>
+      <name>Alice Smith</name>
+      <arxiv:affiliation>MIT CSAIL</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Bob Johnson</name>
+      <arxiv:affiliation>Stanford University</arxiv:affiliation>
+    </author>
+    <arxiv:comment>18 pages, 6 figures. Accepted at ICML 2024</arxiv:comment>
+    <link href="http://arxiv.org/abs/2403.09000v1" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2403.09000v1" rel="related" type="application/pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+
+  <entry>
+    <id>http://arxiv.org/abs/2403.08765v2</id>
+    <updated>2024-03-15T09:12:00Z</updated>
+    <published>2024-03-13T10:30:00Z</published>
+    <title>Large Language Models as
+    Reasoning Agents: A Survey</title>
+    <summary>This survey examines recent advances in using large language models as autonomous
+reasoning agents. We categorize existing approaches and identify open challenges
+in areas such as tool use, memory management, and multi-step planning.</summary>
+    <author>
+      <name>Carol Williams</name>
+      <arxiv:affiliation>UC Berkeley</arxiv:affiliation>
+    </author>
+    <link href="http://arxiv.org/abs/2403.08765v2" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2403.08765v2" rel="related" type="application/pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+
+</feed>

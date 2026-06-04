@@ -8,8 +8,30 @@
 
 ## Статус
 
-В разработке (v1). Полный дизайн и план реализации:
+v1 реализован. Полный дизайн и план:
 [`docs/superpowers/specs/2026-06-04-find-engine-design.md`](docs/superpowers/specs/2026-06-04-find-engine-design.md).
+
+## Документация
+
+Полная документация — в [`docs/`](docs/README.md): архитектура, модель данных,
+HTTP API, конфигурация, эксплуатация и гайд по добавлению источника.
+
+## Запуск
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env            # заполнить DB_URL, токены
+docker-compose up -d            # Postgres
+alembic upgrade head            # схема
+uvicorn find_engine.main:app    # API на :8000
+```
+
+Запустить сбор: `POST /jobs {"source":"arxiv"}` → `GET /jobs/{id}` (статус+stats),
+`GET /health` (живость + список источников).
+
+Тесты: `pytest` (нормализация на фикстурах, orchestrator с моком; repository-тесты
+требуют поднятого Postgres, иначе пропускаются).
 
 ## Кратко
 

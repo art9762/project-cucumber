@@ -1,0 +1,38 @@
+{
+  "kind": "Listing",
+  "data": {
+    "after": null,
+    "children": [
+      {
+        "kind": "t3",
+        "data": {
+          "id": "abc123",
+          "title": "GPT-5 rumours and what we actually know",
+          "url": "https://example.com/gpt5-rumours",
+          "permalink": "/r/MachineLearning/comments/abc123/gpt5_rumours/",
+          "author": "ml_enthusiast",
+          "selftext": "A deep dive into the latest leaks.",
+          "score": 1042,
+          "subreddit": "MachineLearning",
+          "link_flair_text": "Discussion",
+          "created_utc": 1717200000.0
+        }
+      },
+      {
+        "kind": "t3",
+        "data": {
+          "id": "def456",
+          "title": "Running LLaMA 3 locally on consumer hardware",
+          "url": null,
+          "permalink": "/r/LocalLLaMA/comments/def456/running_llama3_locally/",
+          "author": "gpu_hacker",
+          "selftext": "Step-by-step guide to quantise and run LLaMA 3 on a single RTX 4090.",
+          "score": 578,
+          "subreddit": "LocalLLaMA",
+          "link_flair_text": null,
+          "created_utc": 1717186400.0
+        }
+      }
+    ]
+  }
+}
