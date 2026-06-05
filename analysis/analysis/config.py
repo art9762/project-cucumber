@@ -33,6 +33,18 @@ class Settings(BaseSettings):
     # Обработка
     analysis_batch_size: int = 50
 
+    # Скоринг (Фаза 2) — переопределения формулы и порогов из env. None → берётся
+    # ScoringConfig.default() в analysis.score.formula.load_scoring_config().
+    # weights/tiers принимаются как JSON-строки (env-переменные — строки):
+    #   SCORING_WEIGHTS='{"relevance":0.45,"complexity":-0.10,...}'
+    #   SCORING_TIERS='[["S",0.80],["A",0.65],["B",0.50],["C",0.35],["D",0.0]]'
+    scoring_weights: str | None = None
+    scoring_bias: float | None = None
+    scoring_tiers: str | None = None
+    escalate_min_confidence: float | None = None
+    escalate_high_coefficient: float | None = None
+    escalate_boundary_margin: float | None = None
+
     @property
     def read_url_effective(self) -> str:
         """Read-DSN; падает обратно на analysis-DSN, если read не задан отдельно."""
