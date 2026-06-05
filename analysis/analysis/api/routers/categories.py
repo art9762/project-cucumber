@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from analysis.auth.dependencies import get_current_user, require_role
 from analysis.api.category_schemas import (
     ApproveResponse,
     CategoryOut,
@@ -70,6 +71,7 @@ def _build_tree(nodes: list[CategoryNode]) -> list[CategoryTreeNode]:
 @router.get("/categories", response_model=list[CategoryTreeNode])
 async def get_category_tree(
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[CategoryTreeNode]:
     """Вернуть дерево всех категорий (approved и pending), вложенное по parent_id."""
     nodes = await load_category_tree(session)
@@ -79,6 +81,7 @@ async def get_category_tree(
 @router.get("/categories/pending", response_model=list[CategoryOut])
 async def get_pending_categories(
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[CategoryOut]:
     """Вернуть список неутверждённых категорий (очередь модерации)."""
     nodes = await list_pending(session)
@@ -89,6 +92,7 @@ async def get_pending_categories(
 async def approve_category(
     id: uuid.UUID,
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(require_role("admin")),
 ) -> ApproveResponse:
     """Утвердить категорию. 404, если категория не найдена."""
     node = await set_approved(session, id, True)
@@ -102,6 +106,7 @@ async def approve_category(
 async def reject_category(
     id: uuid.UUID,
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(require_role("admin")),
 ) -> RejectResponse:
     """Удалить категорию (reject). 404, если категория не найдена."""
     deleted = await delete_category(session, id)
@@ -114,6 +119,7 @@ async def reject_category(
 @router.post("/classify", response_model=ClassifyRunOut)
 async def classify(
     limit: Optional[int] = Query(default=None, ge=1),
+    _user=Depends(require_role("admin")),
 ) -> ClassifyRunOut:
     """Запустить прогон классификации новых items. Возвращает статистику прогона."""
     from analysis.classify.classifier import run_classification  # ленивый импорт

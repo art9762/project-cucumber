@@ -56,6 +56,28 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dim: int = 384
 
+    # Auth (Фаза 6) — серверные сессии с HttpOnly-cookie (НЕ JWT).
+    # session_secret — резерв на будущее (подпись/прочее); сейчас токен сессии
+    # опаковый (secrets.token_urlsafe), хранится в БД. Берётся ТОЛЬКО из env.
+    # cookie_secure по умолчанию False для локальной разработки (http://localhost);
+    # в проде выставить SESSION_COOKIE_SECURE=true.
+    session_secret: str = "dev-insecure-change-me"
+    session_ttl_hours: int = 24
+    session_cookie_name: str = "cucumber_session"
+    cookie_secure: bool = False
+
+    # CORS (Фаза 5) — список origin'ов UI, которым разрешены credentialed-запросы
+    # (cookie сессии). Пусто по умолчанию: в проде UI обслуживается тем же
+    # origin за nginx, и CORS не нужен. Для локальной разработки задать
+    # CORS_ORIGINS='http://localhost:5173,http://127.0.0.1:5173' (CSV).
+    # Wildcard '*' несовместим с allow_credentials — поэтому только явный список.
+    cors_origins: str = ""
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """CORS_ORIGINS как список (CSV в env → list), пустые элементы отброшены."""
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @property
     def read_url_effective(self) -> str:
         """Read-DSN; падает обратно на analysis-DSN, если read не задан отдельно."""

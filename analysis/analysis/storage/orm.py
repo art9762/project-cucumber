@@ -264,3 +264,44 @@ class ItemEmbeddingORM(Base):
     embedded_at: Mapped[datetime | None] = mapped_column(
         _TZ, server_default=text("now()")
     )
+
+
+# --------------------------------------------------------------------------
+# Auth (Фаза 6): пользователи и серверные сессии. Свои таблицы — пишем сами.
+# --------------------------------------------------------------------------
+class UserORM(Base):
+    """Учётная запись. role: 'admin' (полный доступ) | 'viewer' (только чтение)."""
+
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("username", name="uq_users_username"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    username: Mapped[str] = mapped_column(Text, nullable=False)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(Text, nullable=False, server_default="viewer")
+    is_active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
+    created_at: Mapped[datetime | None] = mapped_column(
+        _TZ, server_default=text("now()")
+    )
+
+
+class SessionORM(Base):
+    """Серверная сессия: опаковый токен в cookie, срок — expires_at."""
+
+    __tablename__ = "sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    token: Mapped[str] = mapped_column(Text, nullable=False, unique=True, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime | None] = mapped_column(
+        _TZ, server_default=text("now()")
+    )
+    expires_at: Mapped[datetime] = mapped_column(_TZ, nullable=False)

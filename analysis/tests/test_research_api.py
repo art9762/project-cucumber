@@ -16,9 +16,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from analysis.api.routers import research as research_mod
+from analysis.auth.dependencies import get_current_user
 from analysis.research.models import ResearchStats
 from analysis.storage.db import get_analysis_session
-from analysis.storage.orm import ItemReadORM, ItemResearchORM
+from analysis.storage.orm import ItemReadORM, ItemResearchORM, UserORM
 
 
 # ---------------------------------------------------------------------------
@@ -26,9 +27,15 @@ from analysis.storage.orm import ItemReadORM, ItemResearchORM
 # ---------------------------------------------------------------------------
 
 def _make_app() -> FastAPI:
-    """Собрать минимальное FastAPI-приложение с роутером ресёрча."""
+    """Собрать минимальное FastAPI-приложение с роутером ресёрча.
+
+    Авторизацию обходим: подменяем get_current_user на фейкового admin.
+    """
     app = FastAPI()
     app.include_router(research_mod.router)
+    app.dependency_overrides[get_current_user] = lambda: UserORM(
+        username="tester", password_hash="x", role="admin", is_active=True
+    )
     return app
 
 

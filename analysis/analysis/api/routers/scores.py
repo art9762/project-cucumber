@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from analysis.api.score_schemas import ItemScoreOut, ScoreRunOut, TierItemOut
+from analysis.auth.dependencies import get_current_user, require_role
 from analysis.storage.db import get_analysis_session, get_analysis_sessionmaker
 from analysis.storage.orm import ItemAnalysisORM, ItemReadORM
 
@@ -22,6 +23,7 @@ async def get_tierlist(
     category_id: Optional[uuid.UUID] = Query(default=None),
     limit: Optional[int] = Query(default=None, ge=1),
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[TierItemOut]:
     """Вернуть тирлист items, отсортированный по coefficient убывающе."""
     stmt = (
@@ -57,6 +59,7 @@ async def get_tierlist(
 async def get_item_score(
     item_id: uuid.UUID,
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> ItemScoreOut:
     """Вернуть результат скоринга для item_id. 404, если строка не найдена."""
     stmt = (
@@ -84,6 +87,7 @@ async def get_item_score(
 @router.post("/score", response_model=ScoreRunOut)
 async def run_score(
     limit: Optional[int] = Query(default=None, ge=1),
+    _user=Depends(require_role("admin")),
 ) -> ScoreRunOut:
     """Запустить прогон скоринга новых items. Возвращает статистику прогона."""
     from analysis.score.scorer import run_scoring  # ленивый импорт

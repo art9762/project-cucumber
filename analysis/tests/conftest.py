@@ -43,12 +43,28 @@ async def analysis_sessionmaker():
         orm.ItemAnalysisORM,
         orm.ItemResearchORM,
         orm.ItemEmbeddingORM,
+        orm.UserORM,
+        orm.SessionORM,
     ):
 
         @event.listens_for(model, "before_insert")
         def _id_default(mapper, connection, target):  # noqa: ANN001
             if getattr(target, "id", None) is None:
                 target.id = uuid.uuid4()
+
+    @event.listens_for(orm.UserORM, "before_insert")
+    def _user_defaults(mapper, connection, target):  # noqa: ANN001
+        if target.role is None:
+            target.role = "viewer"
+        if target.is_active is None:
+            target.is_active = True
+        if target.created_at is None:
+            target.created_at = _utcnow()
+
+    @event.listens_for(orm.SessionORM, "before_insert")
+    def _session_created(mapper, connection, target):  # noqa: ANN001
+        if target.created_at is None:
+            target.created_at = _utcnow()
 
     @event.listens_for(orm.ItemResearchORM, "before_insert")
     def _research_at(mapper, connection, target):  # noqa: ANN001

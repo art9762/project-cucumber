@@ -22,8 +22,10 @@ from fastapi.testclient import TestClient
 import analysis.embed.embedder as embedder_mod
 import analysis.embed.search as search_impl_mod
 from analysis.api.routers import search as search_mod
+from analysis.auth.dependencies import get_current_user
 from analysis.embed.models import EmbedStats, SearchHit
 from analysis.storage.db import get_analysis_session
+from analysis.storage.orm import UserORM
 
 
 def _make_fake_encoder() -> MagicMock:
@@ -37,9 +39,15 @@ def _make_fake_encoder() -> MagicMock:
 
 
 def _make_app() -> FastAPI:
-    """Минимальное FastAPI-приложение с роутером поиска."""
+    """Минимальное FastAPI-приложение с роутером поиска.
+
+    Авторизацию обходим: подменяем get_current_user на фейкового admin.
+    """
     app = FastAPI()
     app.include_router(search_mod.router)
+    app.dependency_overrides[get_current_user] = lambda: UserORM(
+        username="tester", password_hash="x", role="admin", is_active=True
+    )
     return app
 
 

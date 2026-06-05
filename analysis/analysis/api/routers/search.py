@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from analysis.api.search_schemas import EmbedRunOut, SearchHitOut, SearchQueryIn
+from analysis.auth.dependencies import get_current_user, require_role
 from analysis.embed.models import SearchHit
 from analysis.storage.db import (
     get_analysis_session,
@@ -62,6 +63,7 @@ def _hit_to_out(hit: SearchHit) -> SearchHitOut:
 async def search_items(
     body: SearchQueryIn,
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[SearchHitOut]:
     """Семантический поиск: текст → top-K ближайших items по косинусу."""
     from analysis.embed.search import search_by_text  # noqa: PLC0415
@@ -76,6 +78,7 @@ async def get_competitors(
     item_id: uuid.UUID,
     limit: Optional[int] = Query(default=10, ge=1),
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[SearchHitOut]:
     """Поиск конкурентов: похожие items по косинусу к вектору item_id."""
     from analysis.embed.search import find_competitors  # noqa: PLC0415
@@ -87,6 +90,7 @@ async def get_competitors(
 @router.post("/embed", response_model=EmbedRunOut)
 async def run_embed(
     limit: Optional[int] = Query(default=None, ge=1),
+    _user=Depends(require_role("admin")),
 ) -> EmbedRunOut:
     """Запустить прогон эмбеддинга невекторизованных items. Возвращает статистику."""
     from analysis.embed.embedder import run_embedding  # noqa: PLC0415

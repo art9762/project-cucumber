@@ -16,9 +16,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from analysis.api.routers import scores as scores_mod
+from analysis.auth.dependencies import get_current_user
 from analysis.score.models import ScoreStats
 from analysis.storage.db import get_analysis_session
-from analysis.storage.orm import ItemAnalysisORM, ItemReadORM
+from analysis.storage.orm import ItemAnalysisORM, ItemReadORM, UserORM
 
 
 # ---------------------------------------------------------------------------
@@ -26,9 +27,15 @@ from analysis.storage.orm import ItemAnalysisORM, ItemReadORM
 # ---------------------------------------------------------------------------
 
 def _make_app() -> FastAPI:
-    """Собрать минимальное FastAPI-приложение с роутером скоринга."""
+    """Собрать минимальное FastAPI-приложение с роутером скоринга.
+
+    Авторизацию обходим: подменяем get_current_user на фейкового admin.
+    """
     app = FastAPI()
     app.include_router(scores_mod.router)
+    app.dependency_overrides[get_current_user] = lambda: UserORM(
+        username="tester", password_hash="x", role="admin", is_active=True
+    )
     return app
 
 

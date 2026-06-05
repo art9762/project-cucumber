@@ -18,7 +18,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from analysis.api.routers import categories as cat_mod
+from analysis.auth.dependencies import get_current_user
 from analysis.classify.models import CategoryNode, ClassifyStats
+from analysis.storage.orm import UserORM
 
 
 # ---------------------------------------------------------------------------
@@ -44,9 +46,17 @@ def _make_node(
 
 
 def _make_app() -> FastAPI:
-    """Собрать минимальное FastAPI-приложение с роутером категорий."""
+    """Собрать минимальное FastAPI-приложение с роутером категорий.
+
+    Авторизацию обходим: подменяем get_current_user на фейкового admin —
+    этого достаточно и для read-гейтов (get_current_user), и для admin-гейтов
+    (require_role зависит от get_current_user).
+    """
     app = FastAPI()
     app.include_router(cat_mod.router)
+    app.dependency_overrides[get_current_user] = lambda: UserORM(
+        username="tester", password_hash="x", role="admin", is_active=True
+    )
     return app
 
 

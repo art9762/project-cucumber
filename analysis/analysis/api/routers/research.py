@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from analysis.api.research_schemas import CompetitorOut, ItemResearchOut, ResearchRunOut
+from analysis.auth.dependencies import get_current_user, require_role
 from analysis.storage.db import get_analysis_session, get_analysis_sessionmaker
 from analysis.storage.orm import ItemReadORM, ItemResearchORM
 
@@ -55,6 +56,7 @@ def _build_item_research_out(item: ItemReadORM, research: ItemResearchORM) -> It
 async def get_item_research(
     item_id: uuid.UUID,
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> ItemResearchOut:
     """Вернуть результат ресёрча для item_id. 404, если строка не найдена."""
     stmt = (
@@ -75,6 +77,7 @@ async def list_research(
     has_competitors: Optional[bool] = Query(default=None),
     limit: Optional[int] = Query(default=None, ge=1),
     session: AsyncSession = Depends(get_analysis_session),
+    _user=Depends(get_current_user),
 ) -> list[ItemResearchOut]:
     """Вернуть список ресёрч-результатов. Опциональный фильтр по наличию конкурентов."""
     stmt = (
@@ -103,6 +106,7 @@ async def run_research_endpoint(
     limit: Optional[int] = Query(default=None, ge=1),
     min_tier: Optional[str] = Query(default=None),
     min_coefficient: Optional[float] = Query(default=None, ge=0.0, le=1.0),
+    _user=Depends(require_role("admin")),
 ) -> ResearchRunOut:
     """Запустить прогон веб-ресёрча новых items. Возвращает статистику прогона."""
     from analysis.research.researcher import run_research  # ленивый импорт
