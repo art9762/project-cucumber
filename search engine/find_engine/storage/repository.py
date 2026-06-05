@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import literal_column, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,7 +59,7 @@ class Repository:
                     "fetched_at": values["fetched_at"],
                 },
             )
-            .returning(ItemORM.id, (ItemORM.xmax == 0).label("inserted"))
+            .returning(ItemORM.id, (literal_column("xmax") == 0).label("inserted"))
         )
         row = (await self.session.execute(stmt)).one()
         item_id, inserted = row.id, bool(row.inserted)

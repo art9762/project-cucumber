@@ -47,7 +47,7 @@ class GithubSource:
             headers["Authorization"] = f"Bearer {self._token}"
         return headers
 
-    async def fetch(
+    def fetch(
         self, since: datetime | None, cursor: str | None
     ) -> AsyncIterator[RawRecord]:
         return self._fetch_pages(since)
@@ -56,7 +56,7 @@ class GithubSource:
         self, since: datetime | None
     ) -> AsyncIterator[RawRecord]:
         q = self._build_query(since)
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
             for page in range(1, _MAX_PAGES + 1):
                 params: dict[str, Any] = {
                     "q": q,

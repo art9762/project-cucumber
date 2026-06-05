@@ -17,7 +17,7 @@ from find_engine.sources.http import request_with_retry
 
 logger = logging.getLogger(__name__)
 
-_ARXIV_API = "http://export.arxiv.org/api/query"
+_ARXIV_API = "https://export.arxiv.org/api/query"
 _MAX_RESULTS = 50
 
 
@@ -73,7 +73,7 @@ class ArxivSource:
         query = " OR ".join(f"cat:{c}" for c in categories)
         start = int(cursor) if cursor else 0
 
-        async with httpx.AsyncClient(timeout=self._settings.http_timeout) as client:
+        async with httpx.AsyncClient(timeout=self._settings.http_timeout, follow_redirects=True) as client:
             params = {
                 "search_query": query,
                 "sortBy": "submittedDate",
@@ -91,7 +91,8 @@ class ArxivSource:
         for entry in feed.entries:
             published = entry.get("published_parsed")
             if since is not None and published is not None:
-                pub_dt = datetime(*published[:6], tzinfo=timezone.utc)
+                y, mo, d, h, mi, s = published[:6]
+                pub_dt = datetime(y, mo, d, h, mi, s, tzinfo=timezone.utc)
                 if pub_dt <= since:
                     continue
             yield self._entry_to_raw(entry)

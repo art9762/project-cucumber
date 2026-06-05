@@ -35,7 +35,7 @@ class RedditSource:
         self, since: datetime | None, cursor: str | None
     ) -> AsyncIterator[RawRecord]:
         headers = {"User-Agent": self._user_agent}
-        async with httpx.AsyncClient(timeout=self._timeout, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=headers, follow_redirects=True) as client:
             for subreddit in self._subreddits:
                 async for record in self._fetch_subreddit(client, subreddit, since):
                     yield record

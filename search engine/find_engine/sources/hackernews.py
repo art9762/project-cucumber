@@ -44,7 +44,7 @@ class HackerNewsSource:
             unix_ts = int(since.timestamp())
             params["numericFilters"] += f",created_at_i>{unix_ts}"
 
-        async with httpx.AsyncClient(timeout=self._settings.http_timeout) as client:
+        async with httpx.AsyncClient(timeout=self._settings.http_timeout, follow_redirects=True) as client:
             for page in range(_MAX_PAGES):
                 params["page"] = page
                 resp = await request_with_retry(
