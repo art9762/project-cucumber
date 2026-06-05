@@ -4,3 +4,11 @@
 # Editors
 .idea/
 .vscode/
+
+# Secrets — never commit env files or their backups
+.env
+.env.*
+!.env.example
+
+# Tooling
+.claude-flow/
