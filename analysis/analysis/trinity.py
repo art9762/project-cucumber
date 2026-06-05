@@ -65,6 +65,67 @@ class TrinityClient:
         response = await self._client.messages.create(**kwargs)
         return "".join(block.text for block in response.content if hasattr(block, "text"))
 
+    async def search_complete(
+        self,
+        messages: list[dict],
+        *,
+        model: str | None = None,
+        max_tokens: int = 2048,
+        system: str | None = None,
+        max_searches: int = 3,
+    ) -> tuple[str, list[str]]:
+        """Как ``complete``, но с включённым серверным веб-поиском (Trinity
+        прокидывает нативный Anthropic-инструмент ``web_search_20250305``).
+
+        Модель сама решает, искать ли, и сколько раз (до ``max_searches``).
+        Возвращает кортеж ``(text, source_urls)``: склейку текстовых блоков
+        ответа и список URL источников, на которые ссылался веб-поиск
+        (из блоков ``web_search_tool_result``), без дубликатов, в порядке
+        появления.
+
+        Args:
+            messages: История сообщений (формат Anthropic Messages API).
+            model: Имя модели; по умолчанию — дешёвая.
+            max_tokens: Лимит токенов ответа.
+            system: Системный промпт (опционально).
+            max_searches: Максимум обращений к веб-поиску за вызов.
+
+        Returns:
+            ``(text, source_urls)``.
+        """
+        kwargs: dict = {
+            "model": model or self._model_cheap,
+            "max_tokens": max_tokens,
+            "messages": messages,
+            "tools": [
+                {
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": max_searches,
+                }
+            ],
+        }
+        if system is not None:
+            kwargs["system"] = system
+
+        response = await self._client.messages.create(**kwargs)
+
+        text_parts: list[str] = []
+        sources: list[str] = []
+        seen: set[str] = set()
+        for block in response.content:
+            if getattr(block, "type", None) == "text" and hasattr(block, "text"):
+                text_parts.append(block.text)
+            elif getattr(block, "type", None) == "web_search_tool_result":
+                for result in getattr(block, "content", None) or []:
+                    url = getattr(result, "url", None)
+                    if isinstance(result, dict):
+                        url = result.get("url")
+                    if url and url not in seen:
+                        seen.add(url)
+                        sources.append(url)
+        return "".join(text_parts), sources
+
 
 def get_trinity_client() -> TrinityClient:
     """Вернуть singleton TrinityClient (ленивая инициализация)."""

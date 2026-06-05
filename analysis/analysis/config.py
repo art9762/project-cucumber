@@ -45,6 +45,17 @@ class Settings(BaseSettings):
     escalate_high_coefficient: float | None = None
     escalate_boundary_margin: float | None = None
 
+    # Research (Фаза 3) — веб-разбор и поиск конкурентов через серверный
+    # web_search Trinity. Модель по умолчанию — глубокая (Sonnet): ресёрч
+    # дороже скоринга и идёт по выбранным идеям, не по всему потоку.
+    research_model: str = "claude-sonnet-4-6"
+    research_max_searches: int = 3
+
+    # Embeddings (Фаза 4) — локальная модель fastembed (CPU, без API).
+    # Размерность должна совпадать с EMBEDDING_DIM в storage/orm.py.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dim: int = 384
+
     @property
     def read_url_effective(self) -> str:
         """Read-DSN; падает обратно на analysis-DSN, если read не задан отдельно."""

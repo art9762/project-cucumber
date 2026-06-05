@@ -37,12 +37,28 @@ async def analysis_sessionmaker():
         if target.id is None:
             target.id = uuid.uuid4()
 
-    for model in (orm.AnalysisRunORM, orm.CategoryORM, orm.ItemAnalysisORM):
+    for model in (
+        orm.AnalysisRunORM,
+        orm.CategoryORM,
+        orm.ItemAnalysisORM,
+        orm.ItemResearchORM,
+        orm.ItemEmbeddingORM,
+    ):
 
         @event.listens_for(model, "before_insert")
         def _id_default(mapper, connection, target):  # noqa: ANN001
             if getattr(target, "id", None) is None:
                 target.id = uuid.uuid4()
+
+    @event.listens_for(orm.ItemResearchORM, "before_insert")
+    def _research_at(mapper, connection, target):  # noqa: ANN001
+        if target.researched_at is None:
+            target.researched_at = _utcnow()
+
+    @event.listens_for(orm.ItemEmbeddingORM, "before_insert")
+    def _embedded_at(mapper, connection, target):  # noqa: ANN001
+        if target.embedded_at is None:
+            target.embedded_at = _utcnow()
 
     @event.listens_for(orm.CategoryORM, "before_insert")
     def _cat_created(mapper, connection, target):  # noqa: ANN001

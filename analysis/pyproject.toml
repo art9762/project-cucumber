@@ -15,6 +15,8 @@ dependencies = [
     "asyncpg>=0.29",
     "alembic>=1.13",
     "anthropic>=0.40",
+    "pgvector>=0.3",
+    "fastembed>=0.3",
 ]
 
 [project.optional-dependencies]

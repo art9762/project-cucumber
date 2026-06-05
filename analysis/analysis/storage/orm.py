@@ -64,6 +64,45 @@ class _TZ(TypeDecorator):
         return dialect.type_descriptor(DateTime(timezone=True))
 
 
+# Размерность эмбеддинга. fastembed по умолчанию BAAI/bge-small-en-v1.5 → 384.
+EMBEDDING_DIM = 384
+
+
+class _Vector(TypeDecorator):
+    """pgvector ``vector(N)`` на Postgres, JSON-список float на SQLite (unit-тесты).
+
+    Семантический поиск (оператор ``<=>``) работает только на Postgres; в SQLite
+    колонка хранит список как JSON — достаточно для проверки записи/чтения и
+    Python-side косинуса в тестах.
+    """
+
+    impl = JSON
+    cache_ok = True
+
+    def __init__(self, dim: int = EMBEDDING_DIM) -> None:
+        super().__init__()
+        self.dim = dim
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            from pgvector.sqlalchemy import Vector
+
+            return dialect.type_descriptor(Vector(self.dim))
+        return dialect.type_descriptor(JSON())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == "postgresql":
+            return value  # pgvector принимает list[float] напрямую
+        return list(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return list(value)
+
+
 class Base(DeclarativeBase):
     """Metadata СВОИХ таблиц анализа (цель Alembic-истории анализа)."""
 
@@ -164,3 +203,64 @@ class ItemAnalysisORM(Base):
         _TZ, server_default=text("now()")
     )
     model_used: Mapped[str | None] = mapped_column(Text)
+
+
+class ItemResearchORM(Base):
+    """Результат веб-ресёрча одного item (Фаза 3): сводка + найденные конкуренты.
+
+    1:1 к items.id. Конкуренты — JSONB-список объектов
+    ``{"name", "url", "note"}``. ``sources`` — список URL, на которые опиралась
+    модель. ``maturity_signal``/``potential_signal`` (0..1 или None) — сигналы,
+    которыми Фаза 2 может уточнить зрелость/потенциал.
+    """
+
+    __tablename__ = "item_research"
+    __table_args__ = (UniqueConstraint("item_id", name="uq_item_research_item_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(ItemReadORM.__table__.c.id, ondelete="CASCADE"),
+        nullable=False,
+    )
+    summary: Mapped[str | None] = mapped_column(Text)
+    competitors: Mapped[list | None] = mapped_column(_JSONB)
+    sources: Mapped[list[str]] = mapped_column(
+        _ArrayOfText, nullable=False, server_default="{}"
+    )
+    maturity_signal: Mapped[float | None] = mapped_column(Float)
+    potential_signal: Mapped[float | None] = mapped_column(Float)
+    model_used: Mapped[str | None] = mapped_column(Text)
+    researched_at: Mapped[datetime | None] = mapped_column(
+        _TZ, server_default=text("now()")
+    )
+
+
+class ItemEmbeddingORM(Base):
+    """Векторное представление одного item (Фаза 4) для семантического поиска.
+
+    1:1 к items.id. ``embedding`` — pgvector ``vector(EMBEDDING_DIM)`` на
+    Postgres (на SQLite — JSON-список для unit-тестов). ``model``/``dim``
+    фиксируют, какой моделью посчитан вектор — чтобы при смене модели
+    переэмбеддить.
+    """
+
+    __tablename__ = "item_embeddings"
+    __table_args__ = (UniqueConstraint("item_id", name="uq_item_embeddings_item_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(ItemReadORM.__table__.c.id, ondelete="CASCADE"),
+        nullable=False,
+    )
+    embedding: Mapped[list[float] | None] = mapped_column(_Vector(EMBEDDING_DIM))
+    model: Mapped[str | None] = mapped_column(Text)
+    dim: Mapped[int | None] = mapped_column(Integer)
+    embedded_at: Mapped[datetime | None] = mapped_column(
+        _TZ, server_default=text("now()")
+    )
