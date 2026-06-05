@@ -1,6 +1,8 @@
 # Project cucumber — UI
 
-React control panel over the `analysis` FastAPI backend. **Phase 5 scaffold.**
+React control panel over the `analysis` FastAPI backend. **Phase 5 — complete.**
+See [`../docs/phase-5-ui.md`](../docs/phase-5-ui.md) for the page-by-page
+breakdown and deploy notes.
 
 Stack: React 18 + Vite + TypeScript + Tailwind CSS + TanStack Query + Framer
 Motion + React Router. Auth is **server sessions via HttpOnly cookie** — the
@@ -70,20 +72,26 @@ CORS with `allow_credentials=true`.
 `useAuth()` → `{ user, isLoading, login, logout, refetch }`. `<RequireAuth>`
 gates routes and redirects to `/login`. User shape: `{ username, role }`.
 
-## For feature agents
+## Pages — `src/pages/`
 
-Pages are wired in **`src/App.tsx`** as `PageStub` placeholders under an authed
-`<Layout>` shell. Replace the `element` of each route with your real page —
-keep the path the same:
+Routes are wired in **`src/App.tsx`**. Only `/login` is public; every other route
+is wrapped in `<RequireAuth><Layout/></RequireAuth>`.
 
-| Route | Stub | Suggested hooks |
+| Route | Page | Hooks used |
 | --- | --- | --- |
-| `/` | Dashboard | `useHealth`, `useTierlist`, `useResearchList` |
-| `/tierlist` | Tierlist | `useTierlist`, `TierBadge` |
-| `/search` | Search | `useSearch` |
-| `/competitors` | Competitors | `useCompetitors`, `useItemResearch` |
-| `/control` | Control | `useRunClassify`, `useRunScore`, `useRunResearch`, `useRunEmbed`, `useApproveCategory`, `useRejectCategory` |
-| `/settings` | Settings | — |
+| `/login` | `LoginPage` | `useAuth().login` |
+| `/` | `DashboardPage` | `useHealth`, `useTierlist({limit})`, `useResearchList({limit})` |
+| `/tierlist` | `TierlistPage` | `useTierlist({tier, category_id, limit})`, `useCategories` |
+| `/search` | `SearchPage` | `useSearch` |
+| `/competitors` | `CompetitorsPage` | `useCompetitors`, `useItemResearch` |
+| `/control` | `ControlPage` | `useRunClassify`, `useRunScore`, `useRunResearch`, `useRunEmbed`, `usePendingCategories`, `useApproveCategory`, `useRejectCategory` |
+| `/settings` | `SettingsPage` | `useHealth`, `useAuth` (logout), `API_BASE` |
+
+> Dashboard tier counts are derived **client-side** from
+> `useTierlist({ limit: 1000 })` — there is no aggregate endpoint, so counts are
+> incomplete past ~1000 scored items.
 
 Reusable primitives in `src/components/`: `Layout`, `Card`, `Button`, `Input`,
-`Spinner`, `TierBadge`, `EmptyState`, `ErrorState`.
+`Spinner`, `TierBadge`, `EmptyState`, `ErrorState`, plus feature components
+`CategoryTree`, `ItemPicker`, `ScoreBreakdown`, `SearchResultCard`,
+`SignalMeter`, `StageRunnerCard`, `TierlistRow`, `VectorCompetitorCard`.
