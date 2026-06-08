@@ -492,7 +492,8 @@ The app's auth is **server-side opaque sessions** with an HttpOnly cookie
 (`analysis/analysis/auth/sessions.py` — `secrets.token_urlsafe(32)` stored in
 Postgres, not JWT). Settings live in `analysis/analysis/config.py:59-67`.
 
-When the in-flight auth router sets the cookie, production values must be:
+The auth router is wired in `analysis/analysis/main.py`; cookie attributes are
+centralized in `analysis/analysis/auth/dependencies.py`. Production values must be:
 
 | Attribute | Value | Why |
 |-----------|-------|-----|
@@ -500,10 +501,10 @@ When the in-flight auth router sets the cookie, production values must be:
 | `Secure` | `true` | cookie only over HTTPS — set `SESSION_COOKIE_SECURE=true` (config default is `False` for localhost) |
 | `SameSite` | `Lax` | CSRF mitigation; `Lax` works for same-origin `/api` + top-level nav |
 | `Path` | `/` | scope to the app |
-| `Domain` | your apex/subdomain | scope to the deployment host only |
+| `Domain` | unset by code; optionally set if needed | host-only cookie is fine for a single host; add a domain only for an intentional subdomain scope |
 | name | `cucumber_session` | from `SESSION_COOKIE_NAME` |
 
-Example `set_cookie` the auth agent should emit:
+Current `set_session_cookie` behavior:
 
 ```python
 response.set_cookie(
@@ -517,25 +518,18 @@ response.set_cookie(
 )
 ```
 
-**CORS:** there is currently **no CORS middleware** in either app
-(`analysis/analysis/main.py:10-18`). If the UI is served same-origin under `/api`
-(recommended, §4) you don't need it. If the UI is on a **different origin**, add a
-strict allowlist *with credentials* so the browser sends the cookie:
+**CORS:** the analysis app conditionally installs `CORSMiddleware` when
+`CORS_ORIGINS` is non-empty (`analysis/analysis/main.py`). If the UI is served
+same-origin under `/api` (recommended, §4), leave `CORS_ORIGINS` empty. If the UI
+is on a **different origin**, set a strict CSV allowlist *with credentials* so the
+browser sends the cookie:
 
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://cucumber.example.com"],  # exact UI origin(s), NOT "*"
-    allow_credentials=True,        # required for the session cookie
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-)
+```env
+CORS_ORIGINS=https://cucumber.example.com
 ```
 
-> `allow_origins=["*"]` is incompatible with `allow_credentials=True` and would
-> break cookie auth — always list the exact origin.
+The implementation uses `allow_credentials=True`; wildcard origins are not
+appropriate with cookie auth — always list exact origins.
 
 ---
 
@@ -565,7 +559,7 @@ maxretry = 5
 bantime  = 3600
 ```
 
-`sudo systemctl enable --now fail2ban`. For app-level lockout, the auth agent can
+`sudo systemctl enable --now fail2ban`. For app-level lockout, the app can
 additionally throttle failed `verify_password` attempts per account.
 
 ---
@@ -608,7 +602,8 @@ Tick every box before sharing the URL:
 - [ ] `/etc/cucumber/*.env` are mode `600`, owned by `cucumber`; no secrets in repo
       (`git ls-files | grep -i env` shows only `*.example`).
 - [ ] `SESSION_SECRET` set to a fresh random value (NOT `dev-insecure-change-me`).
-- [ ] `SESSION_COOKIE_SECURE=true`; cookie is `HttpOnly`, `SameSite=Lax`, domain-scoped.
+- [ ] `SESSION_COOKIE_SECURE=true`; cookie is `HttpOnly`, `SameSite=Lax`, host-only
+      unless an explicit deployment needs a `Domain`.
 - [ ] Default `findengine/findengine` DB password changed; `analysis_ro` read-only role in use.
 - [ ] Postgres `listen_addresses=localhost` (or Docker bound to `127.0.0.1:5432`);
       `ss -ltnp` shows no `0.0.0.0:5432`.
