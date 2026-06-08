@@ -108,3 +108,7 @@ npm run dev                     # http://localhost:5173
 | 6 — конфиг-ревью | [`docs/phase-6-config-review.md`](docs/phase-6-config-review.md) |
 | 6 — деплой и хардненинг | [`docs/phase-6-deploy-hardening.md`](docs/phase-6-deploy-hardening.md) |
 | Trinity (LLM-шлюз) | [`docs/Trinity.md`](docs/Trinity.md) |
+
+## Лицензия
+
+[Apache License 2.0](LICENSE) © 2026 art9762.
