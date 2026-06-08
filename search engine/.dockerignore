@@ -1,0 +1,43 @@
+# Secrets — never bake into a published image.
+.env
+.env.*
+.env.bak
+*.env
+!.env.example
+
+# Local virtualenv & build artifacts.
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Tooling caches.
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+
+# Tests aren't needed in the runtime image.
+tests/
+
+# Local databases.
+*.sqlite
+*.db
+
+# VCS / OS / editor noise.
+.git/
+.gitignore
+.DS_Store
+.idea/
+.vscode/
+
+# Local agent tooling.
+.claude/
+.claude-flow/
+.mcp.json

@@ -1,0 +1,15 @@
+# Dependencies & build output — reinstalled/rebuilt inside the image.
+node_modules/
+dist/
+
+# Secrets — VITE_API_BASE comes in as a build-arg, never from a committed file.
+.env
+.env.*
+!.env.example
+
+# VCS / OS / editor noise.
+.git/
+.gitignore
+.DS_Store
+.idea/
+.vscode/

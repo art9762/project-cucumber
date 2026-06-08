@@ -1,0 +1,97 @@
+name: CI
+
+# Lint + type-check + tests for all three services. Python tests run on
+# in-memory SQLite (see each tests/conftest.py), so NO Postgres service is
+# needed and nothing hits the network — fastembed and the Anthropic/Trinity
+# client are stubbed in tests.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: analysis (ruff · mypy · pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analysis
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: analysis/pyproject.toml
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Mypy
+        run: mypy analysis
+
+      - name: Pytest
+        run: pytest -q
+
+  search-engine:
+    name: search-engine (ruff · mypy · pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Directory name contains a space — quoting handled by YAML string.
+        working-directory: "search engine"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: "search engine/pyproject.toml"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Mypy
+        run: mypy find_engine
+
+      - name: Pytest
+        run: pytest -q
+
+  ui:
+    name: ui (typecheck · build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # `npm run build` runs `tsc --noEmit && vite build` — covers typecheck.
+      - name: Build
+        run: npm run build
