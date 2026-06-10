@@ -1,0 +1,82 @@
+# Прод-стек Project cucumber на одном VPS. Наружу смотрит ТОЛЬКО proxy (:80);
+# Postgres и оба приложения живут во внутренней сети compose.
+#
+# Образы тянутся из GHCR (собираются .github/workflows/docker.yml). Версию
+# фиксирует IMAGE_TAG в deploy/.env (например 1.0.0); latest — для отладки.
+#
+# Запуск/обновление — через ../deploy.sh, runbook: docs/deploy-compose.md.
+name: cucumber
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: findengine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in deploy/.env}
+      POSTGRES_DB: findengine
+      # Используются init-скриптом ролей при ПЕРВОЙ инициализации тома.
+      ANALYSIS_PASSWORD: ${ANALYSIS_PASSWORD:?set in deploy/.env}
+      ANALYSIS_RO_PASSWORD: ${ANALYSIS_RO_PASSWORD:?set in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U findengine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  analysis:
+    image: ghcr.io/art9762/project-cucumber/analysis:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL_ANALYSIS: postgresql+asyncpg://analysis:${ANALYSIS_PASSWORD}@postgres:5432/findengine
+      DB_URL_READ: postgresql+asyncpg://analysis_ro:${ANALYSIS_RO_PASSWORD}@postgres:5432/findengine
+      ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN:?set in deploy/.env}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://gate.trinity.tg/aurora}
+      SESSION_SECRET: ${SESSION_SECRET:?set in deploy/.env}
+      # Единый origin за прокси — CORS не нужен. Cookie без Secure: доступ по
+      # HTTP/IP (домена и TLS нет); при появлении домена включить
+      # COOKIE_SECURE=true и TLS на прокси.
+      CORS_ORIGINS: ""
+
+  collector:
+    image: ghcr.io/art9762/project-cucumber/search-engine:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # ВАЖНО: внутри процесса живёт APScheduler (find_engine/main.py lifespan) —
+    # строго ОДНА реплика и один uvicorn-воркер, иначе источники опрашиваются
+    # N раз. CMD образа уже задаёт --workers 1.
+    deploy:
+      replicas: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: postgresql+asyncpg://findengine:${POSTGRES_PASSWORD}@postgres:5432/findengine
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID:-}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET:-}
+
+  ui:
+    # Статический бандл за nginx внутри образа; VITE_API_BASE=/api запечён на
+    # этапе сборки (ui/Dockerfile) — фронт ходит в /api того же origin.
+    image: ghcr.io/art9762/project-cucumber/ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - ui
+      - analysis
+
+volumes:
+  pgdata:
