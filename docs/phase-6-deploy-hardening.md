@@ -1,5 +1,10 @@
 # Phase 6 — VPS Deployment & Hardening Runbook
 
+> **Примечание (2026-06-10):** актуальный способ деплоя — Docker Compose, см.
+> [`deploy-compose.md`](deploy-compose.md) и [`deploy/`](../deploy/). Этот
+> документ остаётся справочником по hardening (ufw, ssh, fail2ban, бэкапы,
+> nginx-заголовки) и по альтернативному systemd-варианту без Docker.
+
 Production deployment runbook for **Project cucumber** on a small single-VPS setup
 (Ubuntu 22.04/24.04 LTS assumed). The system is two FastAPI apps plus a Postgres
 database and a React UI:

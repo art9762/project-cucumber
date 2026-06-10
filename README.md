@@ -109,7 +109,21 @@ npm run dev                     # http://localhost:5173
 | 5 — UI / панель | [`docs/phase-5-ui.md`](docs/phase-5-ui.md) |
 | 6 — конфиг-ревью | [`docs/phase-6-config-review.md`](docs/phase-6-config-review.md) |
 | 6 — деплой и хардненинг | [`docs/phase-6-deploy-hardening.md`](docs/phase-6-deploy-hardening.md) |
+| Деплой (Compose, актуальный) | [`docs/deploy-compose.md`](docs/deploy-compose.md) |
 | Trinity (LLM-шлюз) | [`docs/Trinity.md`](docs/Trinity.md) |
+
+## Деплой
+
+Прод-стек разворачивается на VPS одним скриптом из готовых GHCR-образов:
+
+```bash
+cd deploy && cp .env.example .env   # заполнить секреты
+./deploy.sh --init                  # bootstrap + миграции + первый админ
+```
+
+Runbook: [`docs/deploy-compose.md`](docs/deploy-compose.md). Hardening:
+[`docs/phase-6-deploy-hardening.md`](docs/phase-6-deploy-hardening.md).
+История версий: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Лицензия
 
