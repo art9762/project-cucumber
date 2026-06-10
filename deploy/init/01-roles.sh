@@ -9,12 +9,17 @@
 #   analysis_ro — read-only к таблицам движка (DB_URL_READ)
 set -euo pipefail
 
+# Экранируем одинарные кавычки для безопасной вставки в SQL-литерал.
+sq=$'\''
+AP_SQL="${ANALYSIS_PASSWORD//$sq/$sq$sq}"
+ARO_SQL="${ANALYSIS_RO_PASSWORD//$sq/$sq$sq}"
+
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE ROLE analysis LOGIN PASSWORD '${ANALYSIS_PASSWORD}';
+    CREATE ROLE analysis LOGIN PASSWORD '${AP_SQL}';
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO analysis;
     GRANT USAGE, CREATE ON SCHEMA public TO analysis;
 
-    CREATE ROLE analysis_ro LOGIN PASSWORD '${ANALYSIS_RO_PASSWORD}';
+    CREATE ROLE analysis_ro LOGIN PASSWORD '${ARO_SQL}';
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO analysis_ro;
     GRANT USAGE ON SCHEMA public TO analysis_ro;
     GRANT SELECT ON ALL TABLES IN SCHEMA public TO analysis_ro;

@@ -34,8 +34,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_URL_ANALYSIS: postgresql+asyncpg://analysis:${ANALYSIS_PASSWORD}@postgres:5432/findengine
-      DB_URL_READ: postgresql+asyncpg://analysis_ro:${ANALYSIS_RO_PASSWORD}@postgres:5432/findengine
+      DB_URL_ANALYSIS: postgresql+asyncpg://analysis:${ANALYSIS_PASSWORD:?set in deploy/.env}@postgres:5432/findengine
+      DB_URL_READ: postgresql+asyncpg://analysis_ro:${ANALYSIS_RO_PASSWORD:?set in deploy/.env}@postgres:5432/findengine
       ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN:?set in deploy/.env}
       ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://gate.trinity.tg/aurora}
       SESSION_SECRET: ${SESSION_SECRET:?set in deploy/.env}
@@ -56,7 +56,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_URL: postgresql+asyncpg://findengine:${POSTGRES_PASSWORD}@postgres:5432/findengine
+      DB_URL: postgresql+asyncpg://findengine:${POSTGRES_PASSWORD:?set in deploy/.env}@postgres:5432/findengine
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID:-}
       REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET:-}

@@ -30,7 +30,7 @@ ssh "$REMOTE" 'docker compose version >/dev/null'
 
 echo "==> [2/5] Синк deploy-файлов → ${REMOTE_DIR}"
 ssh "$REMOTE" "mkdir -p ${REMOTE_DIR}"
-rsync -rtv docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
+rsync -rtv --delete docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
 
 if ssh "$REMOTE" "test -f ${REMOTE_DIR}/.env"; then
     echo "    .env уже есть на сервере — не трогаю (перезалить: scp .env ${REMOTE}:${REMOTE_DIR}/)"
@@ -53,12 +53,14 @@ if [[ "$INIT" == 1 ]]; then
 
     read -r -p    "    Логин админа [admin]: " ADMIN_USER
     ADMIN_USER="${ADMIN_USER:-admin}"
+    [[ "$ADMIN_USER" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "Недопустимое имя пользователя"; exit 1; }
     read -r -s -p "    Пароль админа (не отображается): " ADMIN_PASS; echo
     [[ -n "$ADMIN_PASS" ]] || { echo "Пустой пароль. Прервано."; exit 1; }
-    # Пароль уходит через stdin → env удалённого шелла, в argv процессов на
-    # сервере он попадает только внутри короткоживущего контейнера.
-    printf '%s' "$ADMIN_PASS" | ssh "$REMOTE" "read -r AP; $DC run --rm analysis \
-        python -m analysis.auth create-admin --username '$ADMIN_USER' --password \"\$AP\""
+    # Оба значения передаются через stdin → переменные удалённого шелла.
+    # Контейнер не наследует пайп (</dev/null).
+    printf '%s\n%s\n' "$ADMIN_USER" "$ADMIN_PASS" | ssh "$REMOTE" "read -r AU; read -r AP; \
+        $DC run --rm analysis python -m analysis.auth create-admin \
+        --username \"\$AU\" --password \"\$AP\" </dev/null"
 else
     echo "==> [4/5] --init не задан: миграции/админ пропущены"
 fi
