@@ -15,9 +15,18 @@ AP_SQL="${ANALYSIS_PASSWORD//$sq/$sq$sq}"
 ARO_SQL="${ANALYSIS_RO_PASSWORD//$sq/$sq$sq}"
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- pgvector ставим заранее суперпользователем: миграции анализа выполняет
+    -- роль analysis, которой CREATE EXTENSION недоступен (их CREATE EXTENSION
+    -- IF NOT EXISTS станет no-op).
+    CREATE EXTENSION IF NOT EXISTS vector;
+
     CREATE ROLE analysis LOGIN PASSWORD '${AP_SQL}';
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO analysis;
     GRANT USAGE, CREATE ON SCHEMA public TO analysis;
+    -- Таблицы движка создаёт findengine ПОСЛЕ этого скрипта (alembic).
+    -- Миграциям анализа нужен FK на items (REFERENCES) и чтение движковых
+    -- таблиц — выдаём через default privileges владельца findengine.
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, REFERENCES ON TABLES TO analysis;
 
     CREATE ROLE analysis_ro LOGIN PASSWORD '${ARO_SQL}';
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO analysis_ro;
