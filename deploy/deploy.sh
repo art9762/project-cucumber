@@ -30,7 +30,7 @@ ssh "$REMOTE" 'docker compose version >/dev/null'
 
 echo "==> [2/5] Синк deploy-файлов → ${REMOTE_DIR}"
 ssh "$REMOTE" "mkdir -p ${REMOTE_DIR}"
-rsync -rtv --delete docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
+rsync -rtv --delete --exclude='.env' docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
 
 if ssh "$REMOTE" "test -f ${REMOTE_DIR}/.env"; then
     echo "    .env уже есть на сервере — не трогаю (перезалить: scp .env ${REMOTE}:${REMOTE_DIR}/)"
