@@ -1,6 +1,6 @@
 [project]
 name = "find-engine"
-version = "0.1.0"
+version = "1.0.0"
 description = "Ядро парсинга публичных источников (GitHub, Reddit, HN, arXiv) в единую базу PostgreSQL"
 readme = "README.md"
 requires-python = ">=3.11"

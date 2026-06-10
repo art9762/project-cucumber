@@ -1,5 +1,10 @@
 # Project cucumber
 
+[![CI](https://github.com/art9762/project-cucumber/actions/workflows/ci.yml/badge.svg)](https://github.com/art9762/project-cucumber/actions/workflows/ci.yml)
+[![Docker](https://github.com/art9762/project-cucumber/actions/workflows/docker.yml/badge.svg)](https://github.com/art9762/project-cucumber/actions/workflows/docker.yml)
+[![Release](https://img.shields.io/github/v/release/art9762/project-cucumber)](https://github.com/art9762/project-cucumber/releases)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 Платформа для отслеживания новых идей и проектов в сфере ИИ и IT: собирает данные
 из публичных источников в единую базу и строит поверх неё анализ, поиск и панель
 управления.
@@ -14,9 +19,6 @@
 | [`search engine/`](search%20engine/) | Ядро сбора (`find-engine`, v1): парсит GitHub, Reddit, Hacker News, arXiv в единую базу PostgreSQL. HTTP API + cron, инкрементальный добор и дедуп. | v1 реализован |
 | [`analysis/`](analysis/) | FastAPI-сервис анализа поверх собранной базы: классификация, скоринг/тирлист, веб-ресёрч, эмбеддинги/семантический поиск, аутентификация. Читает таблицы движка read-only, складывает результаты в свои. | Фазы 0–6 реализованы |
 | [`ui/`](ui/) | Панель управления (React 18 + Vite + TS + Tailwind + TanStack Query + Framer Motion) поверх analysis API: дашборд, тирлист, умный поиск, поиск конкурентов, управление прогонами, настройки. Аутентификация через cookie-сессию. | Фаза 5 реализована |
-
-Прежний черновик `test ui/` оставлен пустым задел-каталогом и заменён рабочим
-модулем [`ui/`](ui/).
 
 План модуля анализа и разбивка по фазам: [`docs/analysis-plan.md`](docs/analysis-plan.md),
 [`docs/KICKOFF.md`](docs/KICKOFF.md).

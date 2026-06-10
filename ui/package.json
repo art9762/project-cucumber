@@ -1,7 +1,7 @@
 {
   "name": "cucumber-ui",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Project cucumber control panel — React frontend over the analysis FastAPI backend.",
   "scripts": {
