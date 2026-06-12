@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import literal_column, select
+from sqlalchemy import literal_column, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from find_engine.core.models import Item, Job, JobState, JobStats
-from find_engine.storage.orm import ItemORM, JobORM, RawRecordORM
+from find_engine.storage.orm import ItemORM, JobORM, RawRecordORM, SourceScheduleORM
 
 
 def _now() -> datetime:
@@ -130,6 +130,29 @@ class Repository:
             .limit(1)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    # ---- schedules ----------------------------------------------------------
+
+    async def get_schedules(self) -> dict[str, str]:
+        """Return {source: cron} for all persisted schedules."""
+        rows = (await self.session.execute(select(SourceScheduleORM))).scalars().all()
+        return {row.source: row.cron for row in rows}
+
+    async def upsert_schedule(self, source: str, cron: str) -> None:
+        stmt = (
+            pg_insert(SourceScheduleORM)
+            .values(source=source, cron=cron)
+            .on_conflict_do_update(
+                index_elements=["source"],
+                set_={"cron": cron, "updated_at": text("now()")},
+            )
+        )
+        await self.session.execute(stmt)
+
+    async def delete_schedule(self, source: str) -> None:
+        orm = await self.session.get(SourceScheduleORM, source)
+        if orm is not None:
+            await self.session.delete(orm)
 
 
 def _job_from_orm(orm: JobORM) -> Job:

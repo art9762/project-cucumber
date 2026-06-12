@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM-таблицы: items, raw_records, jobs."""
+"""SQLAlchemy ORM-таблицы: items, raw_records, jobs, source_schedules."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TIMESTAMP, UUID
@@ -75,3 +76,16 @@ class JobORM(Base):
     error: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+
+
+class SourceScheduleORM(Base):
+    __tablename__ = "source_schedules"
+
+    source: Mapped[str] = mapped_column(Text, primary_key=True)
+    cron: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

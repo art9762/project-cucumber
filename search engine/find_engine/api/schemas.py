@@ -29,3 +29,11 @@ class JobResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     sources: list[str]
+
+
+class ScheduleUpdateRequest(BaseModel):
+    cron: str
+
+
+class ScheduleResponse(BaseModel):
+    schedules: dict[str, str]
