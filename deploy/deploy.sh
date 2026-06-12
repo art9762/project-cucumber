@@ -16,8 +16,11 @@ source .env
 
 : "${VPS_HOST:?VPS_HOST не задан в deploy/.env}"
 VPS_USER="${VPS_USER:-root}"
+PUBLISH_PORT="${PUBLISH_PORT:-80}"
 REMOTE="${VPS_USER}@${VPS_HOST}"
-REMOTE_DIR=/opt/cucumber/deploy
+# Каталог на сервере. /opt принадлежит root; под non-root деплой-юзером
+# (без sudo) кладём в его HOME. Переопределяется REMOTE_DIR в deploy/.env.
+REMOTE_DIR="${REMOTE_DIR:-/opt/cucumber/deploy}"
 DC="docker compose -f ${REMOTE_DIR}/docker-compose.prod.yml --env-file ${REMOTE_DIR}/.env"
 
 INIT=0
@@ -30,7 +33,14 @@ ssh "$REMOTE" 'docker compose version >/dev/null'
 
 echo "==> [2/5] Синк deploy-файлов → ${REMOTE_DIR}"
 ssh "$REMOTE" "mkdir -p ${REMOTE_DIR}"
-rsync -rtv --delete --exclude='.env' docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
+if ssh "$REMOTE" 'command -v rsync >/dev/null 2>&1' && command -v rsync >/dev/null 2>&1; then
+    rsync -rtv --delete --exclude='.env' docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
+else
+    # rsync может отсутствовать (на сервере без sudo не поставить) — синкаем
+    # через tar по ssh. .env не входит в набор (как и при rsync --exclude).
+    echo "    rsync недоступен — синк через tar"
+    tar czf - docker-compose.prod.yml nginx init | ssh "$REMOTE" "tar xzf - -C ${REMOTE_DIR}"
+fi
 
 if ssh "$REMOTE" "test -f ${REMOTE_DIR}/.env"; then
     echo "    .env уже есть на сервере — не трогаю (перезалить: scp .env ${REMOTE}:${REMOTE_DIR}/)"
@@ -66,6 +76,6 @@ else
 fi
 
 echo "==> [5/5] Smoke-check"
-ssh "$REMOTE" "curl -fsS http://127.0.0.1/api/health && echo"
+ssh "$REMOTE" "curl -fsS http://127.0.0.1:${PUBLISH_PORT}/api/health && echo"
 ssh "$REMOTE" "$DC ps"
-echo "OK: UI — http://${VPS_HOST}/"
+echo "OK: UI — http://${VPS_HOST}:${PUBLISH_PORT}/"

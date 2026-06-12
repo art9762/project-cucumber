@@ -71,7 +71,9 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
+      # Хостовый порт настраивается через PUBLISH_PORT в deploy/.env (на VPS
+      # может быть занят 80/443 другими сайтами); внутри контейнера всегда 80.
+      - "${PUBLISH_PORT:-80}:80"
     volumes:
       - ./nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
