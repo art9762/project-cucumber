@@ -32,5 +32,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO analysis_ro;
     GRANT USAGE ON SCHEMA public TO analysis_ro;
     GRANT SELECT ON ALL TABLES IN SCHEMA public TO analysis_ro;
+    -- Default privileges нужны ОТДЕЛЬНО для каждого создателя таблиц:
+    --  • findengine (этот скрипт от его имени) — таблицы движка;
+    --  • analysis — свои таблицы анализа (item_analysis и пр.), которые читает
+    --    классификатор/скорер под analysis_ro (DB_URL_READ). Без FOR ROLE
+    --    analysis права на них не выдаются → permission denied for item_analysis.
     ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO analysis_ro;
+    ALTER DEFAULT PRIVILEGES FOR ROLE analysis IN SCHEMA public GRANT SELECT ON TABLES TO analysis_ro;
 EOSQL
