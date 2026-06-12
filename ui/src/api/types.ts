@@ -218,3 +218,38 @@ export interface LoginRequest {
   username: string;
   password: string;
 }
+
+// ---------------------------------------------------------------------------
+// Collect  (api/collect_schemas.py)
+// ---------------------------------------------------------------------------
+
+export interface CollectStats {
+  fetched: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+}
+
+export interface CollectJobOut {
+  id: string;
+  source: string;
+  status: string; // "queued" | "running" | "success" | "failed"
+  since: string | null;
+  cursor: string | null;
+  stats: CollectStats;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+}
+
+export interface CollectorSourcesOut {
+  sources: string[];
+}
+
+export interface ScheduleOut {
+  schedules: Record<string, string>;
+}
+
+export interface ScheduleUpdateRequest {
+  cron: string;
+}

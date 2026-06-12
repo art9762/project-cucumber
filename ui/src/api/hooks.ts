@@ -15,12 +15,14 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 
-import { get, post } from "./client";
+import { apiFetch, get, post } from "./client";
 import type {
   ApproveResponse as ApproveResult,
   CategoryOut,
   CategoryTreeNode,
   ClassifyRunOut,
+  CollectJobOut,
+  CollectorSourcesOut,
   EmbedRunOut,
   HealthResponse,
   ItemResearchOut,
@@ -30,6 +32,8 @@ import type {
   ResearchRunOut,
   RunLimitParams,
   RunResearchParams,
+  ScheduleOut,
+  ScheduleUpdateRequest,
   ScoreRunOut as ScoreRunOutResult,
   SearchHitOut,
   SearchQueryIn,
@@ -51,6 +55,9 @@ export const queryKeys = {
   itemResearch: (id: string) => ["items", id, "research"] as const,
   competitors: (id: string, limit?: number) =>
     ["items", id, "competitors", limit ?? 10] as const,
+  collectSources: ["collect", "sources"] as const,
+  collectJob: (id: string) => ["collect", "jobs", id] as const,
+  collectSchedule: ["collect", "schedule"] as const,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -271,6 +278,77 @@ export function useRejectCategory(): UseMutationResult<
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.categories });
       void qc.invalidateQueries({ queryKey: queryKeys.categoriesPending });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Collect hooks
+// ---------------------------------------------------------------------------
+
+/** GET /collect/sources */
+export function useCollectorSources(): UseQueryResult<CollectorSourcesOut> {
+  return useQuery({
+    queryKey: queryKeys.collectSources,
+    queryFn: ({ signal }) =>
+      get<CollectorSourcesOut>("/collect/sources", undefined, signal),
+  });
+}
+
+/** POST /collect/jobs — kick off a manual collect run. */
+export function useRunCollect(): UseMutationResult<
+  CollectJobOut,
+  unknown,
+  { source: string }
+> {
+  return useMutation({
+    mutationFn: (body: { source: string }) =>
+      post<CollectJobOut>("/collect/jobs", body),
+  });
+}
+
+const ACTIVE_STATUSES = new Set(["queued", "running"]);
+
+/** GET /collect/jobs/{id} — polls while queued/running, stops on success/failed. */
+export function useCollectJob(
+  jobId: string | null,
+): UseQueryResult<CollectJobOut> {
+  return useQuery({
+    queryKey: queryKeys.collectJob(jobId ?? ""),
+    enabled: !!jobId,
+    queryFn: ({ signal }) =>
+      get<CollectJobOut>(`/collect/jobs/${jobId}`, undefined, signal),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && !ACTIVE_STATUSES.has(status) ? false : 1500;
+    },
+  });
+}
+
+/** GET /collect/schedule */
+export function useCollectorSchedule(): UseQueryResult<ScheduleOut> {
+  return useQuery({
+    queryKey: queryKeys.collectSchedule,
+    queryFn: ({ signal }) =>
+      get<ScheduleOut>("/collect/schedule", undefined, signal),
+  });
+}
+
+/** PUT /collect/schedule/{source} — set or clear a cron schedule. */
+export function useUpdateSchedule(): UseMutationResult<
+  ScheduleOut,
+  unknown,
+  { source: string; cron: string }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ source, cron }: { source: string; cron: string }) =>
+      apiFetch<ScheduleOut>(`/collect/schedule/${source}`, {
+        method: "PUT",
+        body: { cron } satisfies ScheduleUpdateRequest,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.collectSchedule });
     },
   });
 }

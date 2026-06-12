@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { to: "/tierlist", label: "Tierlist" },
   { to: "/search", label: "Search" },
   { to: "/competitors", label: "Competitors" },
+  { to: "/collect", label: "Collect" },
   { to: "/control", label: "Control" },
   { to: "/settings", label: "Settings" },
 ];

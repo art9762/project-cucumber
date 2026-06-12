@@ -9,6 +9,7 @@ import { TierlistPage } from "./pages/TierlistPage";
 import { SearchPage } from "./pages/SearchPage";
 import { CompetitorsPage } from "./pages/CompetitorsPage";
 import { ControlPage } from "./pages/ControlPage";
+import { CollectPage } from "./pages/CollectPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 function NotFound() {
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="search" element={<SearchPage />} />
         <Route path="competitors" element={<CompetitorsPage />} />
         <Route path="control" element={<ControlPage />} />
+        <Route path="collect" element={<CollectPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
