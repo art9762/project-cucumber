@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     session_cookie_name: str = "cucumber_session"
     cookie_secure: bool = False
 
+    # Collector (внутренняя сеть Docker). Проксируется через analysis-шлюз.
+    collector_base_url: str = "http://collector:8114"
+
     # CORS (Фаза 5) — список origin'ов UI, которым разрешены credentialed-запросы
     # (cookie сессии). Пусто по умолчанию: в проде UI обслуживается тем же
     # origin за nginx, и CORS не нужен. Для локальной разработки задать
