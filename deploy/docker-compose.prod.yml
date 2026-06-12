@@ -39,10 +39,12 @@ services:
       ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN:?set in deploy/.env}
       ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://gate.trinity.tg/aurora}
       SESSION_SECRET: ${SESSION_SECRET:?set in deploy/.env}
-      # Единый origin за прокси — CORS не нужен. Cookie без Secure: доступ по
-      # HTTP/IP (домена и TLS нет); при появлении домена включить
-      # COOKIE_SECURE=true и TLS на прокси.
+      # Единый origin за прокси — CORS не нужен.
       CORS_ORIGINS: ""
+      # Прокси терминирует TLS (self-signed на IP либо доверенный на домене),
+      # поэтому session-cookie выдаём только по HTTPS. Переопределяется
+      # COOKIE_SECURE в deploy/.env, если когда-то понадобится plain-HTTP.
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
 
   collector:
     image: ghcr.io/art9762/project-cucumber/search-engine:${IMAGE_TAG:-latest}
@@ -72,10 +74,13 @@ services:
     restart: unless-stopped
     ports:
       # Хостовый порт настраивается через PUBLISH_PORT в deploy/.env (на VPS
-      # может быть занят 80/443 другими сайтами); внутри контейнера всегда 80.
-      - "${PUBLISH_PORT:-80}:80"
+      # может быть занят 80/443 другими сайтами); внутри контейнера TLS на 443.
+      - "${PUBLISH_PORT:-443}:443"
     volumes:
       - ./nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      # Self-signed (или доверенный) сертификат; генерируется deploy.sh при
+      # первом прогоне в ${REMOTE_DIR}/certs, если отсутствует.
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - ui
       - analysis

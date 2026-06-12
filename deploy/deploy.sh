@@ -16,7 +16,7 @@ source .env
 
 : "${VPS_HOST:?VPS_HOST не задан в deploy/.env}"
 VPS_USER="${VPS_USER:-root}"
-PUBLISH_PORT="${PUBLISH_PORT:-80}"
+PUBLISH_PORT="${PUBLISH_PORT:-443}"
 REMOTE="${VPS_USER}@${VPS_HOST}"
 # Каталог на сервере. /opt принадлежит root; под non-root деплой-юзером
 # (без sudo) кладём в его HOME. Переопределяется REMOTE_DIR в deploy/.env.
@@ -26,12 +26,12 @@ DC="docker compose -f ${REMOTE_DIR}/docker-compose.prod.yml --env-file ${REMOTE_
 INIT=0
 [[ "${1:-}" == "--init" ]] && INIT=1
 
-echo "==> [1/5] Docker на ${REMOTE}"
+echo "==> [1/6] Docker на ${REMOTE}"
 # get.docker.com идемпотентен не вполне — ставим только если docker отсутствует.
 ssh "$REMOTE" 'command -v docker >/dev/null 2>&1 || (curl -fsSL https://get.docker.com | sh)'
 ssh "$REMOTE" 'docker compose version >/dev/null'
 
-echo "==> [2/5] Синк deploy-файлов → ${REMOTE_DIR}"
+echo "==> [2/6] Синк deploy-файлов → ${REMOTE_DIR}"
 ssh "$REMOTE" "mkdir -p ${REMOTE_DIR}"
 if ssh "$REMOTE" 'command -v rsync >/dev/null 2>&1' && command -v rsync >/dev/null 2>&1; then
     rsync -rtv --delete --exclude='.env' docker-compose.prod.yml nginx init "${REMOTE}:${REMOTE_DIR}/"
@@ -51,7 +51,22 @@ else
     ssh "$REMOTE" "chmod 600 ${REMOTE_DIR}/.env"
 fi
 
-echo "==> [3/5] Pull образов и запуск"
+echo "==> [3/6] TLS-сертификат прокси"
+# Без домена — self-signed cert (доступ по IP). Генерируем на сервере ОДИН раз;
+# существующий (в т.ч. доверенный, подложенный вручную) не трогаем. Прокси
+# монтирует ${REMOTE_DIR}/certs:ro и ждёт fullchain.pem + privkey.pem.
+ssh "$REMOTE" "set -e; CERTS=${REMOTE_DIR}/certs; \
+    if [ ! -f \"\$CERTS/fullchain.pem\" ] || [ ! -f \"\$CERTS/privkey.pem\" ]; then \
+        echo '    генерирую self-signed cert (CN=${VPS_HOST}, 825 дней)'; \
+        mkdir -p \"\$CERTS\"; \
+        openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+            -keyout \"\$CERTS/privkey.pem\" -out \"\$CERTS/fullchain.pem\" \
+            -subj \"/CN=${VPS_HOST}\" \
+            -addext \"subjectAltName=IP:${VPS_HOST}\" >/dev/null 2>&1; \
+        chmod 600 \"\$CERTS/privkey.pem\"; \
+    else echo '    cert уже есть — не трогаю'; fi"
+
+echo "==> [4/6] Pull образов и запуск"
 ssh "$REMOTE" "$DC pull && $DC up -d"
 # nginx резолвит upstream'ы (analysis/ui) по имени ОДИН раз при старте и кеширует
 # IP. При up -d контейнеры пересоздаются с новыми IP → proxy упирается в старый
@@ -59,7 +74,7 @@ ssh "$REMOTE" "$DC pull && $DC up -d"
 ssh "$REMOTE" "$DC restart proxy"
 
 if [[ "$INIT" == 1 ]]; then
-    echo "==> [4/5] Инициализация: миграции + первый админ"
+    echo "==> [5/6] Инициализация: миграции + первый админ"
     # Схема движка (items, raw_records, jobs) — от имени findengine.
     ssh "$REMOTE" "$DC run --rm collector python -m alembic upgrade head"
     # Схема анализа (0001→0003) — от имени роли analysis.
@@ -76,10 +91,11 @@ if [[ "$INIT" == 1 ]]; then
         $DC run --rm analysis python -m analysis.auth create-admin \
         --username \"\$AU\" --password \"\$AP\" </dev/null"
 else
-    echo "==> [4/5] --init не задан: миграции/админ пропущены"
+    echo "==> [5/6] --init не задан: миграции/админ пропущены"
 fi
 
-echo "==> [5/5] Smoke-check"
-ssh "$REMOTE" "curl -fsS http://127.0.0.1:${PUBLISH_PORT}/api/health && echo"
+echo "==> [6/6] Smoke-check"
+# -k: self-signed cert не проходит верификацию — для smoke это ожидаемо.
+ssh "$REMOTE" "curl -fsSk https://127.0.0.1:${PUBLISH_PORT}/api/health && echo"
 ssh "$REMOTE" "$DC ps"
-echo "OK: UI — http://${VPS_HOST}:${PUBLISH_PORT}/"
+echo "OK: UI — https://${VPS_HOST}:${PUBLISH_PORT}/  (self-signed cert → разовое предупреждение браузера)"

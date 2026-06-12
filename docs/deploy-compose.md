@@ -11,15 +11,22 @@
 ## Топология
 
 ```
-Internet ──:80──▶ proxy (nginx) ──┬── /api/ → analysis:8113 (префикс срезается)
-                                  └── /     → ui:80 (статика)
+Internet ──:443 (TLS)──▶ proxy (nginx) ──┬── /api/ → analysis:8113 (префикс срезается)
+                                         └── /     → ui:80 (статика)
 внутренняя сеть compose: postgres:5432 ← analysis, collector
-наружу опубликован ТОЛЬКО proxy:80
+наружу опубликован ТОЛЬКО proxy:443 (HTTPS)
 ```
 
-Домена/TLS нет — доступ по `http://<IP>`, cookie без Secure-флага
-(`COOKIE_SECURE` по умолчанию false). При появлении домена: TLS на proxy
-(certbot/Caddy) + `COOKIE_SECURE=true` в env analysis.
+TLS терминируется на proxy. Без домена — self-signed-сертификат (генерируется
+`deploy.sh` при первом прогоне в `${REMOTE_DIR}/certs`), доступ по `https://<IP>`
+с разовым предупреждением браузера о недоверенном сертификате. Session-cookie
+выдаётся с флагом `Secure` (`COOKIE_SECURE=true` по умолчанию в compose).
+
+HSTS намеренно ВЫКЛЮЧЕН: с self-signed-сертификатом он сделал бы предупреждение
+о сертификате необратимым (браузер запомнит политику и запретит обход). При
+появлении домена: подложить доверенный cert (Let's Encrypt) в `certs/`,
+раскомментировать `Strict-Transport-Security` в
+[`deploy/nginx/proxy.conf`](../deploy/nginx/proxy.conf).
 
 ## Предусловия
 
@@ -41,7 +48,9 @@ cp .env.example .env
 # (логин/пароль спросит интерактивно). В конце — smoke: /api/health + ps.
 ```
 
-Открыть `http://<VPS_HOST>/`, залогиниться созданной учёткой.
+Открыть `https://<VPS_HOST>/` (если `PUBLISH_PORT` нестандартный — с портом,
+напр. `https://<VPS_HOST>:41394/`), принять предупреждение о self-signed
+сертификате, залогиниться созданной учёткой.
 
 ## Обновление версии
 
