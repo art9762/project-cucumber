@@ -3,6 +3,27 @@
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [1.0.1] — 2026-06-12
+
+Патч: первый деплой на VPS вскрыл баг логина в UI и ограничения деплой-скрипта
+под non-root окружением.
+
+### Fixed
+
+- **ui** — `buildUrl()` вызывал `new URL(path)` без base; при прод-настройке
+  `VITE_API_BASE=/api` (single-origin) путь относительный, и `new URL()` кидал
+  `Invalid URL` → в браузере «Could not reach the server», хотя бэкенд жив.
+  Теперь резолвится против `window.location.origin`.
+
+### Changed
+
+- **deploy** — публичный порт прокси настраивается через `PUBLISH_PORT`
+  (когда 80/443 заняты), каталог на сервере — через `REMOTE_DIR` (под non-root
+  юзером без доступа к `/opt`); `deploy.sh` синкает через `tar`, если на сервере
+  нет `rsync`.
+
+[1.0.1]: https://github.com/art9762/project-cucumber/releases/tag/v1.0.1
+
 ## [1.0.0] — 2026-06-10
 
 Первый публичный релиз: полный конвейер «сбор → анализ → панель управления».
