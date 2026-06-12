@@ -43,8 +43,15 @@ export interface FetchOptions {
 }
 
 function buildUrl(path: string, query?: FetchOptions["query"]): string {
+  // API_BASE may be absolute (dev: http://localhost:8113) or relative
+  // (prod same-origin: /api). `new URL()` throws on a relative string with no
+  // base, so resolve against the current origin — harmless for absolute bases,
+  // which ignore the second arg.
+  const base =
+    typeof window !== "undefined" ? window.location.origin : undefined;
   const url = new URL(
     path.startsWith("/") ? `${API_BASE}${path}` : `${API_BASE}/${path}`,
+    base,
   );
   if (query) {
     for (const [key, value] of Object.entries(query)) {
