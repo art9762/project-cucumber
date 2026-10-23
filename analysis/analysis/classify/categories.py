@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from analysis.classify.models import CategoryNode
 from analysis.storage.orm import CategoryORM
 
-
 # ---------------------------------------------------------------------------
 # Внутренний конвертер ORM → dataclass
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -59,7 +59,7 @@ class RedditSource:
             for child in children:
                 post = child["data"]
                 if since is not None:
-                    created = datetime.fromtimestamp(post["created_utc"], tz=timezone.utc)
+                    created = datetime.fromtimestamp(post["created_utc"], tz=UTC)
                     if created <= since:
                         return
                 yield RawRecord(
@@ -88,5 +88,5 @@ class RedditSource:
             body=post.get("selftext") or None,
             score=post.get("score"),
             tags=tags,
-            created_at=datetime.fromtimestamp(post["created_utc"], tz=timezone.utc),
+            created_at=datetime.fromtimestamp(post["created_utc"], tz=UTC),
         )

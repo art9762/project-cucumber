@@ -149,9 +149,11 @@ class TestGetTrinityClientSingleton:
         import analysis.trinity as trinity_module
 
         monkeypatch.setattr(trinity_module, "_trinity_client", None)
-        with patch("analysis.trinity.anthropic.AsyncAnthropic"):
-            with patch("analysis.trinity.get_settings", return_value=_make_settings()):
-                result = get_trinity_client()
+        with (
+            patch("analysis.trinity.anthropic.AsyncAnthropic"),
+            patch("analysis.trinity.get_settings", return_value=_make_settings()),
+        ):
+            result = get_trinity_client()
         assert isinstance(result, TrinityClient)
 
     def test_returns_same_instance_on_second_call(
@@ -160,8 +162,10 @@ class TestGetTrinityClientSingleton:
         import analysis.trinity as trinity_module
 
         monkeypatch.setattr(trinity_module, "_trinity_client", None)
-        with patch("analysis.trinity.anthropic.AsyncAnthropic"):
-            with patch("analysis.trinity.get_settings", return_value=_make_settings()):
-                first = get_trinity_client()
-                second = get_trinity_client()
+        with (
+            patch("analysis.trinity.anthropic.AsyncAnthropic"),
+            patch("analysis.trinity.get_settings", return_value=_make_settings()),
+        ):
+            first = get_trinity_client()
+            second = get_trinity_client()
         assert first is second

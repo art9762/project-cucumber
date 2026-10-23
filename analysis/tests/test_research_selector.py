@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -21,7 +21,7 @@ def _item(external_id: str, fetched_at: datetime | None = None) -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=fetched_at or datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=fetched_at or datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 

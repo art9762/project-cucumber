@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -32,7 +32,7 @@ from analysis.trinity import TrinityClient
 
 def _utcnow() -> datetime:
     """Вернуть текущее UTC-время."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def _process_item(

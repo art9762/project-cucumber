@@ -23,6 +23,7 @@ import type {
   ClassifyRunOut,
   CollectJobOut,
   CollectorSourcesOut,
+  DashboardStatsOut,
   EmbedRunOut,
   HealthResponse,
   ItemResearchOut,
@@ -47,6 +48,7 @@ import type {
 
 export const queryKeys = {
   health: ["health"] as const,
+  dashboard: ["dashboard", "stats"] as const,
   categories: ["categories"] as const,
   categoriesPending: ["categories", "pending"] as const,
   tierlist: (filters: TierlistFilters = {}) => ["tierlist", filters] as const,
@@ -69,6 +71,16 @@ export function useHealth(): UseQueryResult<HealthResponse> {
   return useQuery({
     queryKey: queryKeys.health,
     queryFn: ({ signal }) => get<HealthResponse>("/health", undefined, signal),
+    refetchInterval: 30_000,
+  });
+}
+
+/** GET /dashboard/stats — full-corpus counters. */
+export function useDashboardStats(): UseQueryResult<DashboardStatsOut> {
+  return useQuery({
+    queryKey: queryKeys.dashboard,
+    queryFn: ({ signal }) =>
+      get<DashboardStatsOut>("/dashboard/stats", undefined, signal),
     refetchInterval: 30_000,
   });
 }
@@ -211,6 +223,7 @@ export function useRunScore(): UseMutationResult<
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["tierlist"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
 }
@@ -231,6 +244,7 @@ export function useRunResearch(): UseMutationResult<
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["research"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
 }
@@ -313,11 +327,19 @@ const ACTIVE_STATUSES = new Set(["queued", "running"]);
 export function useCollectJob(
   jobId: string | null,
 ): UseQueryResult<CollectJobOut> {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: queryKeys.collectJob(jobId ?? ""),
     enabled: !!jobId,
-    queryFn: ({ signal }) =>
-      get<CollectJobOut>(`/collect/jobs/${jobId}`, undefined, signal),
+    queryFn: async ({ signal }) => {
+      const job = await get<CollectJobOut>(
+        `/collect/jobs/${jobId}`, undefined, signal,
+      );
+      if (!ACTIVE_STATUSES.has(job.status)) {
+        void qc.invalidateQueries({ queryKey: queryKeys.dashboard });
+      }
+      return job;
+    },
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       return status && !ACTIVE_STATUSES.has(status) ? false : 1500;

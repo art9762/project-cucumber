@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -12,18 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from analysis.api.score_schemas import ItemScoreOut, ScoreRunOut, TierItemOut
 from analysis.auth.dependencies import get_current_user, require_role
 from analysis.storage.db import get_analysis_session, get_analysis_sessionmaker
-from analysis.storage.orm import ItemAnalysisORM, ItemReadORM
+from analysis.storage.orm import ItemAnalysisORM, ItemReadORM, UserORM
 
 router = APIRouter(tags=["scores"])
 
 
 @router.get("/tierlist", response_model=list[TierItemOut])
 async def get_tierlist(
-    tier: Optional[str] = Query(default=None),
-    category_id: Optional[uuid.UUID] = Query(default=None),
-    limit: Optional[int] = Query(default=None, ge=1),
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
+    tier: str | None = Query(default=None),
+    category_id: Annotated[uuid.UUID | None, Query()] = None,
+    limit: int | None = Query(default=None, ge=1),
 ) -> list[TierItemOut]:
     """Вернуть тирлист items, отсортированный по coefficient убывающе."""
     stmt = (
@@ -58,8 +58,8 @@ async def get_tierlist(
 @router.get("/items/{item_id}/score", response_model=ItemScoreOut)
 async def get_item_score(
     item_id: uuid.UUID,
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
 ) -> ItemScoreOut:
     """Вернуть результат скоринга для item_id. 404, если строка не найдена."""
     stmt = (
@@ -86,8 +86,8 @@ async def get_item_score(
 
 @router.post("/score", response_model=ScoreRunOut)
 async def run_score(
-    limit: Optional[int] = Query(default=None, ge=1),
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
+    limit: int | None = Query(default=None, ge=1),
 ) -> ScoreRunOut:
     """Запустить прогон скоринга новых items. Возвращает статистику прогона."""
     from analysis.score.scorer import run_scoring  # ленивый импорт

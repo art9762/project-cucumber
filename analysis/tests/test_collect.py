@@ -18,7 +18,6 @@ from analysis.api.routers import collect as collect_mod
 from analysis.auth.dependencies import get_current_user
 from analysis.storage.orm import UserORM
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -254,3 +253,20 @@ def test_invalid_job_id_rejected() -> None:
     client = TestClient(_make_app())
     resp = client.get("/collect/jobs/not-a-uuid")
     assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "body,expected_detail",
+    [("collector maintenance", "collector maintenance"), ("", "Service Unavailable")],
+)
+def test_collector_non_json_error_preserves_status_and_detail(body, expected_detail) -> None:
+    collector_response = httpx.Response(
+        503, text=body, request=httpx.Request("GET", "http://collector/health")
+    )
+    ctx = _make_async_client(collector_response)
+
+    with patch("analysis.api.routers.collect.httpx.AsyncClient", return_value=ctx):
+        response = TestClient(_make_app()).get("/collect/sources")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": expected_detail}

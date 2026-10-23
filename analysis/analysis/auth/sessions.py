@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,7 @@ from analysis.storage.orm import SessionORM, UserORM
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def create_session(
@@ -48,7 +48,7 @@ async def resolve_session(session: AsyncSession, token: str) -> UserORM | None:
 
     expires_at = sess.expires_at
     if expires_at.tzinfo is None:  # SQLite отдаёт naive datetime
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        expires_at = expires_at.replace(tzinfo=UTC)
     if expires_at <= _utcnow():
         return None
 

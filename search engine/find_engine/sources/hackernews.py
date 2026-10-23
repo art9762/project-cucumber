@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -80,9 +80,7 @@ class HackerNewsSource:
         created_at: datetime | None = None
         raw_ts = hit.get("created_at")
         if raw_ts:
-            created_at = datetime.fromisoformat(
-                raw_ts.replace("Z", "+00:00")
-            ).astimezone(timezone.utc)
+            created_at = datetime.fromisoformat(raw_ts).astimezone(UTC)
 
         return Item(
             source="hackernews",

@@ -35,7 +35,8 @@ CORS with `allow_credentials=true`.
 - **`client.ts`** — `apiFetch<T>` + `get`/`post`. Throws typed `ApiError`
   ({ status, message, body }); `isUnauthorized(err)` detects HTTP 401.
 - **`hooks.ts`** — TanStack Query hooks for every endpoint. Reads:
-  `useHealth`, `useCategories`, `usePendingCategories`, `useTierlist(filters)`,
+  `useHealth`, `useDashboardStats`, `useCategories`, `usePendingCategories`,
+  `useTierlist(filters)`,
   `useItemScore(id)`, `useResearchList(filters)`, `useItemResearch(id)`,
   `useCompetitors(id, limit)`. Mutations: `useSearch`, `useRunClassify`,
   `useRunScore`, `useRunResearch`, `useRunEmbed`, `useApproveCategory`,
@@ -46,6 +47,7 @@ CORS with `allow_credentials=true`.
 | Method | Path | Hook | Response type |
 | --- | --- | --- | --- |
 | GET | `/health` | `useHealth` | `HealthResponse` |
+| GET | `/dashboard/stats` | `useDashboardStats` | `DashboardStatsOut` |
 | GET | `/categories` | `useCategories` | `CategoryTreeNode[]` |
 | GET | `/categories/pending` | `usePendingCategories` | `CategoryOut[]` |
 | POST | `/categories/{id}/approve` | `useApproveCategory` | `ApproveResponse` |
@@ -80,16 +82,17 @@ is wrapped in `<RequireAuth><Layout/></RequireAuth>`.
 | Route | Page | Hooks used |
 | --- | --- | --- |
 | `/login` | `LoginPage` | `useAuth().login` |
-| `/` | `DashboardPage` | `useHealth`, `useTierlist({limit})`, `useResearchList({limit})` |
+| `/` | `DashboardPage` | `useHealth`, `useDashboardStats` |
 | `/tierlist` | `TierlistPage` | `useTierlist({tier, category_id, limit})`, `useCategories` |
 | `/search` | `SearchPage` | `useSearch` |
 | `/competitors` | `CompetitorsPage` | `useCompetitors`, `useItemResearch` |
 | `/control` | `ControlPage` | `useRunClassify`, `useRunScore`, `useRunResearch`, `useRunEmbed`, `usePendingCategories`, `useApproveCategory`, `useRejectCategory` |
 | `/settings` | `SettingsPage` | `useHealth`, `useAuth` (logout), `API_BASE` |
 
-> Dashboard tier counts are derived **client-side** from
-> `useTierlist({ limit: 1000 })` — there is no aggregate endpoint, so counts are
-> incomplete past ~1000 scored items.
+Dashboard counters come from `GET /dashboard/stats`, which aggregates the entire
+corpus in SQL. Total items includes collected items with no analysis result, and
+unscored items includes classified items without a coefficient. Counters refresh
+every 30 seconds and after scoring, research, or a completed collection job.
 
 Reusable primitives in `src/components/`: `Layout`, `Card`, `Button`, `Input`,
 `Spinner`, `TierBadge`, `EmptyState`, `ErrorState`, plus feature components

@@ -6,13 +6,12 @@ item_embeddings, соблюдает порядок fetched_at/id, соблюда
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from analysis.embed.selector import select_unembedded_items
 from analysis.storage.orm import ItemEmbeddingORM, ItemReadORM
-
 
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
@@ -26,7 +25,7 @@ def _item(external_id: str, fetched_dt: datetime | None = None) -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 
@@ -38,8 +37,8 @@ def _item(external_id: str, fetched_dt: datetime | None = None) -> ItemReadORM:
 async def test_returns_only_unembedded(analysis_sessionmaker) -> None:
     """Items без item_embeddings возвращаются; с эмбеддингом — нет."""
     async with analysis_sessionmaker() as session:
-        item_embedded = _item("emb1", datetime(2024, 1, 1, tzinfo=timezone.utc))
-        item_bare = _item("bare1", datetime(2024, 1, 2, tzinfo=timezone.utc))
+        item_embedded = _item("emb1", datetime(2024, 1, 1, tzinfo=UTC))
+        item_bare = _item("bare1", datetime(2024, 1, 2, tzinfo=UTC))
         session.add_all([item_embedded, item_bare])
         await session.commit()
 
@@ -63,8 +62,8 @@ async def test_returns_only_unembedded(analysis_sessionmaker) -> None:
 @pytest.mark.asyncio
 async def test_order_fetched_at_then_id(analysis_sessionmaker) -> None:
     """Порядок: fetched_at ASC, id ASC."""
-    dt1 = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    dt2 = datetime(2024, 1, 2, tzinfo=timezone.utc)
+    dt1 = datetime(2024, 1, 1, tzinfo=UTC)
+    dt2 = datetime(2024, 1, 2, tzinfo=UTC)
 
     async with analysis_sessionmaker() as session:
         # item_b имеет более позднюю дату → должен идти вторым.
@@ -88,7 +87,7 @@ async def test_order_fetched_at_then_id(analysis_sessionmaker) -> None:
 async def test_limit_respected(analysis_sessionmaker) -> None:
     """limit=1 возвращает не более одного item."""
     async with analysis_sessionmaker() as session:
-        items = [_item(f"lim{i}", datetime(2024, 1, i + 1, tzinfo=timezone.utc)) for i in range(3)]
+        items = [_item(f"lim{i}", datetime(2024, 1, i + 1, tzinfo=UTC)) for i in range(3)]
         session.add_all(items)
         await session.commit()
 

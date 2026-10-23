@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from analysis.api.research_schemas import CompetitorOut, ItemResearchOut, ResearchRunOut
 from analysis.auth.dependencies import get_current_user, require_role
 from analysis.storage.db import get_analysis_session, get_analysis_sessionmaker
-from analysis.storage.orm import ItemReadORM, ItemResearchORM
+from analysis.storage.orm import ItemReadORM, ItemResearchORM, UserORM
 
 router = APIRouter(tags=["research"])
 
@@ -55,8 +55,8 @@ def _build_item_research_out(item: ItemReadORM, research: ItemResearchORM) -> It
 @router.get("/items/{item_id}/research", response_model=ItemResearchOut)
 async def get_item_research(
     item_id: uuid.UUID,
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
 ) -> ItemResearchOut:
     """Вернуть результат ресёрча для item_id. 404, если строка не найдена."""
     stmt = (
@@ -74,10 +74,10 @@ async def get_item_research(
 
 @router.get("/research", response_model=list[ItemResearchOut])
 async def list_research(
-    has_competitors: Optional[bool] = Query(default=None),
-    limit: Optional[int] = Query(default=None, ge=1),
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
+    has_competitors: bool | None = Query(default=None),
+    limit: int | None = Query(default=None, ge=1),
 ) -> list[ItemResearchOut]:
     """Вернуть список ресёрч-результатов. Опциональный фильтр по наличию конкурентов."""
     stmt = (
@@ -103,10 +103,10 @@ async def list_research(
 
 @router.post("/research", response_model=ResearchRunOut)
 async def run_research_endpoint(
-    limit: Optional[int] = Query(default=None, ge=1),
-    min_tier: Optional[str] = Query(default=None),
-    min_coefficient: Optional[float] = Query(default=None, ge=0.0, le=1.0),
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
+    limit: int | None = Query(default=None, ge=1),
+    min_tier: str | None = Query(default=None),
+    min_coefficient: float | None = Query(default=None, ge=0.0, le=1.0),
 ) -> ResearchRunOut:
     """Запустить прогон веб-ресёрча новых items. Возвращает статистику прогона."""
     from analysis.research.researcher import run_research  # ленивый импорт

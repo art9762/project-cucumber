@@ -3,6 +3,7 @@
  *
  * These interfaces mirror the pydantic schemas in the analysis backend exactly:
  *   analysis/analysis/api/category_schemas.py
+ *   analysis/analysis/api/dashboard_schemas.py
  *   analysis/analysis/api/score_schemas.py
  *   analysis/analysis/api/research_schemas.py
  *   analysis/analysis/api/search_schemas.py
@@ -21,6 +22,16 @@ export interface HealthResponse {
   status: string; // "ok" | "degraded"
   database: boolean;
   trinity_configured: boolean;
+}
+
+/** GET /dashboard/stats — counts across the complete collected corpus. */
+export interface DashboardStatsOut {
+  total_items: number;
+  scored_items: number;
+  unscored_items: number;
+  researched_items: number;
+  with_competitors: number;
+  tier_counts: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------

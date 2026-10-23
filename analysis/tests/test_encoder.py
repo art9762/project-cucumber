@@ -19,7 +19,6 @@ import pytest
 
 from analysis.storage.orm import EMBEDDING_DIM
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -94,8 +93,8 @@ class TestEncoderDim:
         assert enc.dim == EMBEDDING_DIM
 
     def test_model_name_default_from_settings(self) -> None:
-        from analysis.embed.encoder import Encoder
         from analysis.config import get_settings
+        from analysis.embed.encoder import Encoder
 
         enc = Encoder()
         assert enc.model_name == get_settings().embedding_model
@@ -350,7 +349,7 @@ class TestLazyImport:
     def test_module_imports_without_fastembed(self) -> None:
         """encoder.py must be importable even if fastembed is absent."""
         # fastembed is not installed; if this import raises, the test fails.
-        import analysis.embed.encoder as enc_mod  # noqa: F401
+        import analysis.embed.encoder as enc_mod
 
         assert hasattr(enc_mod, "Encoder")
         assert hasattr(enc_mod, "build_embed_text")

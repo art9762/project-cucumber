@@ -22,7 +22,6 @@ from analysis.auth.dependencies import get_current_user
 from analysis.classify.models import CategoryNode, ClassifyStats
 from analysis.storage.orm import UserORM
 
-
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
 # ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import feedparser
@@ -26,11 +26,11 @@ def _safe_dict(entry: Any) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in entry.items():
         if isinstance(value, time.struct_time):
-            result[key] = datetime(*value[:6], tzinfo=timezone.utc).isoformat()
+            result[key] = datetime(*value[:6], tzinfo=UTC).isoformat()
         elif isinstance(value, list):
             result[key] = [
                 _safe_dict(v) if hasattr(v, "items") else
-                datetime(*v[:6], tzinfo=timezone.utc).isoformat() if isinstance(v, time.struct_time) else v
+                datetime(*v[:6], tzinfo=UTC).isoformat() if isinstance(v, time.struct_time) else v
                 for v in value
             ]
         elif hasattr(value, "items"):
@@ -92,7 +92,7 @@ class ArxivSource:
             published = entry.get("published_parsed")
             if since is not None and published is not None:
                 y, mo, d, h, mi, s = published[:6]
-                pub_dt = datetime(y, mo, d, h, mi, s, tzinfo=timezone.utc)
+                pub_dt = datetime(y, mo, d, h, mi, s, tzinfo=UTC)
                 if pub_dt <= since:
                     continue
             yield self._entry_to_raw(entry)
@@ -128,23 +128,23 @@ class ArxivSource:
 
         created_at: datetime | None = None
         published_str = p.get("published")
-        if published_str:
+        if isinstance(published_str, str) and published_str:
             try:
                 from email.utils import parsedate_to_datetime
                 created_at = parsedate_to_datetime(published_str)
                 if created_at.tzinfo is None:
-                    created_at = created_at.replace(tzinfo=timezone.utc)
-            except Exception:
-                pass
+                    created_at = created_at.replace(tzinfo=UTC)
+            except (TypeError, ValueError, OverflowError):
+                logger.debug("Invalid published date for arXiv record %s", raw.external_id)
         if created_at is None:
             published_parsed = p.get("published_parsed")
             if published_parsed and isinstance(published_parsed, str):
                 try:
                     created_at = datetime.fromisoformat(published_parsed)
                     if created_at.tzinfo is None:
-                        created_at = created_at.replace(tzinfo=timezone.utc)
-                except Exception:
-                    pass
+                        created_at = created_at.replace(tzinfo=UTC)
+                except ValueError:
+                    logger.debug("Invalid parsed date for arXiv record %s", raw.external_id)
 
         return Item(
             source=self.name,

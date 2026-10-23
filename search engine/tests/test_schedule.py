@@ -5,13 +5,14 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
 
+from find_engine.config import get_settings
 from find_engine.core.scheduler import Scheduler
 from find_engine.core.source import available_sources, clear_registry
 from find_engine.sources import register_all
-from find_engine.config import get_settings
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -83,14 +84,14 @@ def test_start_applies_env_defaults():
 
 
 def test_start_db_overrides_env():
-    sched, fake_ap = _make_scheduler({"arxiv": "0 6 * * *"})
+    sched, _ = _make_scheduler({"arxiv": "0 6 * * *"})
     sched.start(extra_schedules={"arxiv": "0 12 * * *", "github": "0 8 * * *"})
     assert sched.current_schedules()["arxiv"] == "0 12 * * *"
     assert sched.current_schedules()["github"] == "0 8 * * *"
 
 
 def test_start_db_empty_cron_removes_env_job():
-    sched, fake_ap = _make_scheduler({"arxiv": "0 6 * * *"})
+    sched, _ = _make_scheduler({"arxiv": "0 6 * * *"})
     sched.start(extra_schedules={"arxiv": ""})
     # env added it, then DB cleared it
     assert "arxiv" not in sched.current_schedules()
@@ -105,7 +106,7 @@ def test_reschedule_valid_cron():
 
 
 def test_reschedule_empty_removes_job():
-    sched, fake_ap = _make_scheduler({"arxiv": "0 6 * * *"})
+    sched, _ = _make_scheduler({"arxiv": "0 6 * * *"})
     sched.start()
     sched.reschedule("arxiv", "")
     assert "arxiv" not in sched.current_schedules()
@@ -114,7 +115,7 @@ def test_reschedule_empty_removes_job():
 def test_reschedule_invalid_cron_raises():
     sched, _ = _make_scheduler()
     sched.start()
-    with pytest.raises(Exception):  # ValueError from CronTrigger
+    with pytest.raises(ValueError, match="Wrong number of fields"):
         sched.reschedule("arxiv", "not-a-cron")
 
 
@@ -134,7 +135,7 @@ async def test_schedule_repository_roundtrip():
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-    except Exception as exc:
+    except (OSError, SQLAlchemyError) as exc:
         await engine.dispose()
         pytest.skip(f"Postgres недоступен: {exc}")
 
@@ -184,8 +185,7 @@ async def test_schedule_repository_roundtrip():
 # ---------------------------------------------------------------------------
 
 
-def _make_test_app(scheduler: Scheduler) -> "FastAPI":
-    from fastapi import FastAPI
+def _make_test_app(scheduler: Scheduler) -> FastAPI:
     from find_engine.api.routers import schedule as schedule_router
 
     app = FastAPI()
@@ -230,9 +230,11 @@ def test_put_schedule_valid_cron_persists_and_reschedules(scheduler_mock):
     mock_sm = _mock_sessionmaker()
     mock_sm.return_value.execute = AsyncMock()
 
-    with patch("find_engine.api.routers.schedule.get_sessionmaker", return_value=mock_sm):
-        with TestClient(app) as client:
-            resp = client.put("/schedule/arxiv", json={"cron": "0 6 * * *"})
+    with (
+        patch("find_engine.api.routers.schedule.get_sessionmaker", return_value=mock_sm),
+        TestClient(app) as client,
+    ):
+        resp = client.put("/schedule/arxiv", json={"cron": "0 6 * * *"})
 
     assert resp.status_code == 200
     data = resp.json()
@@ -262,9 +264,11 @@ def test_put_schedule_empty_cron_clears(scheduler_mock):
     mock_sm = _mock_sessionmaker()
     mock_sm.return_value.execute = AsyncMock()
 
-    with patch("find_engine.api.routers.schedule.get_sessionmaker", return_value=mock_sm):
-        with TestClient(app) as client:
-            resp = client.put("/schedule/arxiv", json={"cron": ""})
+    with (
+        patch("find_engine.api.routers.schedule.get_sessionmaker", return_value=mock_sm),
+        TestClient(app) as client,
+    ):
+        resp = client.put("/schedule/arxiv", json={"cron": ""})
 
     assert resp.status_code == 200
     assert resp.json()["schedules"]["arxiv"] == ""

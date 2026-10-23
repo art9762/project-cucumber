@@ -1,18 +1,14 @@
 import { motion } from "framer-motion";
-import { useMemo, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { useHealth, useResearchList, useTierlist } from "../api/hooks";
-import type { ItemResearchOut, TierItemOut } from "../api/types";
+import { useDashboardStats, useHealth } from "../api/hooks";
 import { Card } from "../components/Card";
 import { ErrorState } from "../components/ErrorState";
 import { Spinner } from "../components/Spinner";
 import { TierBadge } from "../components/TierBadge";
 
 const TIER_ORDER = ["S", "A", "B", "C", "D"] as const;
-
-/** Pull a large slice so dashboard counts reflect the whole corpus. */
-const DASHBOARD_LIMIT = 1000;
 
 interface StatCardProps {
   label: string;
@@ -54,42 +50,10 @@ function HealthPill({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-function countByTier(items: TierItemOut[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const item of items) {
-    const key = item.tier?.toUpperCase() ?? "";
-    if (!key) continue;
-    counts[key] = (counts[key] ?? 0) + 1;
-  }
-  return counts;
-}
-
-function countResearched(items: ItemResearchOut[]): {
-  researched: number;
-  withCompetitors: number;
-} {
-  let withCompetitors = 0;
-  for (const item of items) {
-    if (item.competitors.length > 0) withCompetitors += 1;
-  }
-  return { researched: items.length, withCompetitors };
-}
-
 export function DashboardPage() {
   const health = useHealth();
-  const tierlist = useTierlist({ limit: DASHBOARD_LIMIT });
-  const research = useResearchList({ limit: DASHBOARD_LIMIT });
-
-  const tierCounts = useMemo(
-    () => countByTier(tierlist.data ?? []),
-    [tierlist.data],
-  );
-  const researchStats = useMemo(
-    () => countResearched(research.data ?? []),
-    [research.data],
-  );
-
-  const totalItems = tierlist.data?.length ?? 0;
+  const stats = useDashboardStats();
+  const tierCounts = stats.data?.tier_counts ?? {};
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -131,29 +95,29 @@ export function DashboardPage() {
         )}
       </Card>
 
-      {tierlist.isError ? (
+      {stats.isError ? (
         <ErrorState
-          error={tierlist.error}
-          onRetry={() => void tierlist.refetch()}
-          title="Could not load tierlist stats"
+          error={stats.error}
+          onRetry={() => void stats.refetch()}
+          title="Could not load dashboard stats"
         />
-      ) : tierlist.isLoading ? (
+      ) : stats.isLoading ? (
         <div className="flex justify-center py-10">
           <Spinner size={28} label="Loading stats…" />
         </div>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard index={0} label="Total items" value={totalItems} />
+            <StatCard
+              index={0}
+              label="Total items"
+              value={stats.data?.total_items ?? 0}
+            />
             <StatCard
               index={1}
               label="Researched"
-              value={research.isLoading ? "…" : researchStats.researched}
-              hint={
-                research.isLoading
-                  ? undefined
-                  : `${researchStats.withCompetitors} with competitors`
-              }
+              value={stats.data?.researched_items ?? 0}
+              hint={`${stats.data?.with_competitors ?? 0} with competitors`}
             />
             <StatCard
               index={2}
@@ -164,11 +128,8 @@ export function DashboardPage() {
             <StatCard
               index={3}
               label="Unscored"
-              value={
-                totalItems -
-                TIER_ORDER.reduce((sum, t) => sum + (tierCounts[t] ?? 0), 0)
-              }
-              hint="no tier assigned"
+              value={stats.data?.unscored_items ?? 0}
+              hint="not yet scored"
             />
           </div>
 
