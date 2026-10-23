@@ -30,8 +30,22 @@ uvicorn find_engine.main:app    # API на :8000
 Запустить сбор: `POST /jobs {"source":"arxiv"}` → `GET /jobs/{id}` (статус+stats),
 `GET /health` (живость + список источников).
 
-Тесты: `pytest` (нормализация на фикстурах, orchestrator с моком; repository-тесты
-требуют поднятого Postgres, иначе пропускаются).
+## Тесты
+
+`pytest` проверяет нормализацию на фикстурах и orchestrator с моками. Три
+PostgreSQL-теста (upsert/дедуп, watermark, расписание) требуют **отдельной тестовой
+БД**, явно заданной через `TEST_DB_URL`:
+
+```bash
+TEST_DB_URL='postgresql+asyncpg://test_user:test_password@localhost:55432/cucumber_test' pytest -q
+```
+
+Без `TEST_DB_URL` эти три теста пропускаются; недоступная явно заданная БД
+вызывает ошибку. `DB_URL` и `.env` приложения для них не используются. Fixture
+создаёт случайную схему `cucumber_test_<uuid>` на каждый тест и удаляет только её;
+пользователю нужны права `CREATE` на тестовую БД. Не направляйте тесты на рабочую
+БД. CI поднимает PostgreSQL 16 и выполняет весь набор, включая эти три теста.
+
 
 ## Кратко
 

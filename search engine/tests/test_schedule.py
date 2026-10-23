@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.exc import SQLAlchemyError
 
 from find_engine.config import get_settings
 from find_engine.core.scheduler import Scheduler
@@ -120,64 +119,47 @@ def test_reschedule_invalid_cron_raises():
 
 
 # ---------------------------------------------------------------------------
-# Repository schedule methods (Postgres-only, skip if unavailable)
+# Repository schedule methods (Postgres-only, opt in via TEST_DB_URL)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_schedule_repository_roundtrip():
-    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-    from find_engine.storage.orm import Base
+async def test_schedule_repository_roundtrip(pg_sessionmaker):
     from find_engine.storage.repository import Repository
 
-    engine = create_async_engine(get_settings().db_url)
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-    except (OSError, SQLAlchemyError) as exc:
-        await engine.dispose()
-        pytest.skip(f"Postgres недоступен: {exc}")
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        await repo.upsert_schedule("arxiv", "0 6 * * *")
+        await repo.upsert_schedule("github", "0 8 * * *")
+        await session.commit()
 
-    sm = async_sessionmaker(engine, expire_on_commit=False)
-    try:
-        async with sm() as session:
-            repo = Repository(session)
-            await repo.upsert_schedule("arxiv", "0 6 * * *")
-            await repo.upsert_schedule("github", "0 8 * * *")
-            await session.commit()
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        schedules = await repo.get_schedules()
+        assert schedules["arxiv"] == "0 6 * * *"
+        assert schedules["github"] == "0 8 * * *"
 
-        async with sm() as session:
-            repo = Repository(session)
-            schedules = await repo.get_schedules()
-            assert schedules["arxiv"] == "0 6 * * *"
-            assert schedules["github"] == "0 8 * * *"
+    # upsert updates existing row
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        await repo.upsert_schedule("arxiv", "0 12 * * *")
+        await session.commit()
 
-        # upsert updates existing row
-        async with sm() as session:
-            repo = Repository(session)
-            await repo.upsert_schedule("arxiv", "0 12 * * *")
-            await session.commit()
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        schedules = await repo.get_schedules()
+        assert schedules["arxiv"] == "0 12 * * *"
 
-        async with sm() as session:
-            repo = Repository(session)
-            schedules = await repo.get_schedules()
-            assert schedules["arxiv"] == "0 12 * * *"
+    # delete removes the row
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        await repo.delete_schedule("arxiv")
+        await session.commit()
 
-        # delete removes the row
-        async with sm() as session:
-            repo = Repository(session)
-            await repo.delete_schedule("arxiv")
-            await session.commit()
-
-        async with sm() as session:
-            repo = Repository(session)
-            schedules = await repo.get_schedules()
-            assert "arxiv" not in schedules
-    finally:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-        await engine.dispose()
+    async with pg_sessionmaker() as session:
+        repo = Repository(session)
+        schedules = await repo.get_schedules()
+        assert "arxiv" not in schedules
 
 
 # ---------------------------------------------------------------------------

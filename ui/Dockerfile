@@ -3,7 +3,7 @@
 # VITE_API_BASE is baked in AT BUILD TIME (Vite inlines import.meta.env into the
 # bundle), so it must be passed as a build-arg, not a runtime env var. The CI
 # workflow / deploy sets it to the public analysis API URL.
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 
 WORKDIR /app
 

@@ -24,7 +24,7 @@ function StatCard({ label, value, hint, index }: StatCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut", delay: index * 0.04 }}
     >
-      <div className="rounded-2xl border border-border bg-surface/70 p-5 shadow-lg shadow-black/20 backdrop-blur-sm">
+      <div className="rounded-2xl border border-border bg-surface/70 p-5 shadow-lg shadow-black/20 backdrop-blur-xs">
         <div className="text-xs font-medium uppercase tracking-wide text-muted">
           {label}
         </div>

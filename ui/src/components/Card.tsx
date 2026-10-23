@@ -23,7 +23,7 @@ export function Card({
     <div
       className={
         "rounded-2xl border border-border bg-surface/70 shadow-lg shadow-black/20 " +
-        "backdrop-blur-sm " +
+        "backdrop-blur-xs " +
         className
       }
     >

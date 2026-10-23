@@ -121,7 +121,7 @@ export function ItemPicker({ selectedId, onSelect }: ItemPickerProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-surface shadow-lg shadow-black/30 backdrop-blur-sm"
+            className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-surface shadow-lg shadow-black/30 backdrop-blur-xs"
           >
             {filtered.length === 0 ? (
               <li className="px-4 py-3 text-sm text-muted">No matching ideas.</li>

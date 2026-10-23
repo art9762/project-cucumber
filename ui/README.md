@@ -1,6 +1,7 @@
 # Project cucumber — UI
 
-React control panel over the `analysis` FastAPI backend. **Phase 5 — complete.**
+React control panel over the `analysis` FastAPI backend. Phase 5 is implemented;
+current acceptance coverage and remaining checks are in [VALIDATION.md](../docs/VALIDATION.md).
 See [`../docs/phase-5-ui.md`](../docs/phase-5-ui.md) for the page-by-page
 breakdown and deploy notes.
 
@@ -10,9 +11,13 @@ API client always sends `credentials: 'include'`, so no token is stored.
 
 ## Run
 
+Use Node 22.12+ (Node 22 is used in CI and the build container). The package
+engine range also permits Node 20.19+. Tailwind 4 targets Safari 16.4+, Chrome
+111+, and Firefox 128+.
+
 ```bash
 cd ui
-npm install
+npm ci
 cp .env.example .env.local   # adjust VITE_API_BASE if needed
 npm run dev                  # http://localhost:5173
 ```
@@ -98,3 +103,17 @@ Reusable primitives in `src/components/`: `Layout`, `Card`, `Button`, `Input`,
 `Spinner`, `TierBadge`, `EmptyState`, `ErrorState`, plus feature components
 `CategoryTree`, `ItemPicker`, `ScoreBreakdown`, `SearchResultCard`,
 `SignalMeter`, `StageRunnerCard`, `TierlistRow`, `VectorCompetitorCard`.
+
+
+## Dependency maintenance
+
+The UI uses Vite 7.3, React Router 7, and Tailwind 4's Vite plugin. React remains
+on 18.3. Tailwind explicitly loads `tailwind.config.js` through `@config`, so the
+CSS-variable color palette and custom radii/font stay in one place. The small
+backdrop blur and accessible outline utilities use their Tailwind 4 names.
+PostCSS/autoprefixer are no longer separate build plugins.
+
+After updating dependencies, run `npm ci`, `npm run build`, and `npm audit`.
+CI runs the same build and audits both production and development dependencies.
+The router upgrade also needs a login/navigation/logout smoke, and styling
+changes need a browser check; a successful typecheck alone does not prove them.
