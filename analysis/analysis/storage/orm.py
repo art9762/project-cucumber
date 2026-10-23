@@ -16,7 +16,17 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    JSON,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
@@ -170,10 +180,10 @@ class CategoryORM(Base):
         _TZ, server_default=text("now()")
     )
 
-    children: Mapped[list["CategoryORM"]] = relationship(
+    children: Mapped[list[CategoryORM]] = relationship(
         back_populates="parent", cascade="all, delete-orphan"
     )
-    parent: Mapped["CategoryORM | None"] = relationship(
+    parent: Mapped[CategoryORM | None] = relationship(
         back_populates="children", remote_side="CategoryORM.id"
     )
 

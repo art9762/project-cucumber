@@ -84,10 +84,12 @@ def test_health_trinity_not_configured(unconfigured_trinity_client: TestClient) 
 
 def test_health_db_failure(sqlite_sessionmaker) -> None:
     """Недоступная БД → status degraded, database False, всегда 200."""
+    from sqlalchemy.ext.asyncio import async_sessionmaker as _asm
+    from sqlalchemy.ext.asyncio import create_async_engine as _cae
+
+    import analysis.trinity as trinity_mod
     from analysis.api.routers import health as health_mod
     from analysis.main import create_app
-    import analysis.trinity as trinity_mod
-    from sqlalchemy.ext.asyncio import async_sessionmaker as _asm, create_async_engine as _cae
 
     # Сессия на несуществующий хост — connect сразу даст ошибку.
     bad_engine = _cae("sqlite+aiosqlite:////nonexistent_path_xyz/bad.db")

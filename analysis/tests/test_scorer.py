@@ -8,15 +8,14 @@ compute_coefficient/assign_tier используются настоящие че
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
 
 from analysis.score.models import ScoreParams, ScoreResult, ScoringConfig
 from analysis.score.scorer import run_scoring
-from analysis.storage.orm import AnalysisRunORM, ItemAnalysisORM, ItemReadORM, CategoryORM
-
+from analysis.storage.orm import AnalysisRunORM, CategoryORM, ItemAnalysisORM, ItemReadORM
 
 # ---------------------------------------------------------------------------
 # Константы для детерминированных тестов
@@ -55,7 +54,7 @@ def _item(external_id: str, fetched_dt: datetime | None = None) -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 
@@ -71,7 +70,7 @@ def _trinity(return_value: str = "{}") -> AsyncMock:
     return mock
 
 
-def _patch_prompt(monkeypatch) -> None:  # noqa: ANN001
+def _patch_prompt(monkeypatch) -> None:
     """Заглушить build_score_prompt — возвращает стабильные (system, messages)."""
     monkeypatch.setattr(
         "analysis.score.scorer.build_score_prompt",
@@ -79,7 +78,7 @@ def _patch_prompt(monkeypatch) -> None:  # noqa: ANN001
     )
 
 
-def _patch_parse_ok(monkeypatch, result: ScoreResult = _GOOD_RESULT) -> None:  # noqa: ANN001
+def _patch_parse_ok(monkeypatch, result: ScoreResult = _GOOD_RESULT) -> None:
     """Заглушить parse_scores — всегда возвращает result."""
     monkeypatch.setattr("analysis.score.scorer.parse_scores", lambda text: result)
 
@@ -190,8 +189,8 @@ async def test_per_item_failure_does_not_abort_run(analysis_sessionmaker, monkey
 
     async with analysis_sessionmaker() as session:
         cat = _category()
-        item1 = _item("f1", datetime(2024, 1, 1, 1, tzinfo=timezone.utc))
-        item2 = _item("f2", datetime(2024, 1, 1, 2, tzinfo=timezone.utc))
+        item1 = _item("f1", datetime(2024, 1, 1, 1, tzinfo=UTC))
+        item2 = _item("f2", datetime(2024, 1, 1, 2, tzinfo=UTC))
         session.add_all([cat, item1, item2])
         await session.commit()
         item2_id = item2.id

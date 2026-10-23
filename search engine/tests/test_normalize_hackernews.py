@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timezone
+from datetime import UTC
 from pathlib import Path
 
 from find_engine.config import Settings
@@ -38,7 +38,7 @@ class TestHackerNewsNormalize:
         assert "story" in item.tags
         assert item.created_at is not None
         assert item.created_at.tzinfo is not None
-        assert item.created_at.tzinfo == timezone.utc
+        assert item.created_at.tzinfo == UTC
 
     def test_normalize_url_fallback(self) -> None:
         """Хит без url должен получить ссылку на HN-страницу."""
@@ -60,7 +60,7 @@ class TestHackerNewsNormalize:
         item = _make_source().normalize(raw)
 
         assert item.created_at is not None
-        assert item.created_at.tzinfo == timezone.utc
+        assert item.created_at.tzinfo == UTC
         assert item.created_at.year == 2024
 
     def test_normalize_tags_are_strings(self) -> None:

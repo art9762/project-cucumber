@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
@@ -16,7 +16,6 @@ import pytest
 
 from analysis.classify.models import CategoryNode, ClassificationResult
 from analysis.classify.prompt import _to_kebab, build_classify_prompt, parse_classification
-
 
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
@@ -43,7 +42,7 @@ def _make_item(
         author=author,
         score=score,
         tags=tags or [],
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         fetched_at=None,
     )
 
@@ -178,7 +177,7 @@ class TestBuildClassifyPrompt:
 
     def test_none_body_does_not_error(self) -> None:
         item = _make_item(body=None)
-        system, messages = build_classify_prompt(item, self._categories())
+        _system, messages = build_classify_prompt(item, self._categories())
         assert messages[0]["role"] == "user"
 
 

@@ -21,7 +21,6 @@ from analysis.research.models import ResearchStats
 from analysis.storage.db import get_analysis_session
 from analysis.storage.orm import ItemReadORM, ItemResearchORM, UserORM
 
-
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
 # ---------------------------------------------------------------------------

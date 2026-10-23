@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import feedparser
@@ -125,5 +125,41 @@ class TestNormalize:
 
     def test_created_at_value(self, src: ArxivSource, raw_records):
         item = src.normalize(raw_records[0])
-        expected = datetime(2024, 3, 14, 17, 59, 31, tzinfo=timezone.utc)
+        expected = datetime(2024, 3, 14, 17, 59, 31, tzinfo=UTC)
         assert item.created_at == expected
+
+
+@pytest.mark.parametrize("published", ["not a date", 123, None])
+def test_invalid_published_uses_parsed_fallback(src: ArxivSource, published):
+    raw = RawRecord(
+        source="arxiv",
+        external_id="test-fallback",
+        payload={
+            "title": "Synthetic paper",
+            "link": "https://arxiv.org/abs/test",
+            "published": published,
+            "published_parsed": "2024-03-14T17:59:31+00:00",
+        },
+    )
+
+    item = src.normalize(raw)
+
+    assert item.created_at == datetime(2024, 3, 14, 17, 59, 31, tzinfo=UTC)
+
+
+def test_invalid_dates_keep_item_without_timestamp(src: ArxivSource):
+    raw = RawRecord(
+        source="arxiv",
+        external_id="test-invalid-date",
+        payload={
+            "title": "Synthetic paper",
+            "link": "https://arxiv.org/abs/test",
+            "published": "not a date",
+            "published_parsed": "also not a date",
+        },
+    )
+
+    item = src.normalize(raw)
+
+    assert item.title == "Synthetic paper"
+    assert item.created_at is None

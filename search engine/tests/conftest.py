@@ -36,17 +36,17 @@ async def sessionmaker():
     from find_engine.storage import orm
 
     @event.listens_for(orm.ItemORM, "before_insert")
-    def _item_id(mapper, connection, target):  # noqa: ANN001
+    def _item_id(mapper, connection, target):
         if target.id is None:
             target.id = uuid.uuid4()
 
     @event.listens_for(orm.JobORM, "before_insert")
-    def _job_id(mapper, connection, target):  # noqa: ANN001
+    def _job_id(mapper, connection, target):
         if target.id is None:
             target.id = uuid.uuid4()
 
     @event.listens_for(orm.RawRecordORM, "before_insert")
-    def _raw_id(mapper, connection, target):  # noqa: ANN001
+    def _raw_id(mapper, connection, target):
         if target.id is None:
             target.id = uuid.uuid4()
 

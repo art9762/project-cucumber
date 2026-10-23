@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Orchestrator:
@@ -79,7 +79,7 @@ class Orchestrator:
                     finished_at=_now(),
                 )
                 await session.commit()
-            except Exception as exc:  # noqa: BLE001 — фиксируем ошибку в job и пробрасываем
+            except Exception as exc:
                 await session.rollback()
                 async with self._sessionmaker() as err_session:
                     err_repo = self._repo(err_session)

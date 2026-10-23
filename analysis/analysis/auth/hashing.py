@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 _hasher = PasswordHasher()
 

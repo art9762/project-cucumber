@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -60,14 +62,14 @@ async def test_upsert_inserts_then_dedups(pg_sessionmaker):
 
 
 async def test_watermark_from_last_success(pg_sessionmaker):
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from find_engine.core.models import JobState, JobStats
 
     async with pg_sessionmaker() as session:
         repo = Repository(session)
         job = await repo.create_job("test", since=None)
-        ts = datetime(2026, 6, 4, tzinfo=timezone.utc)
+        ts = datetime(2026, 6, 4, tzinfo=UTC)
         await repo.update_job(
             job.id, status=JobState.success, stats=JobStats(), finished_at=ts
         )

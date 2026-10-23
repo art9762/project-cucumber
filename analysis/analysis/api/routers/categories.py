@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from typing import Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from analysis.auth.dependencies import get_current_user, require_role
 from analysis.api.category_schemas import (
     ApproveResponse,
     CategoryOut,
@@ -17,6 +16,7 @@ from analysis.api.category_schemas import (
     ClassifyRunOut,
     RejectResponse,
 )
+from analysis.auth.dependencies import get_current_user, require_role
 from analysis.classify.categories import (
     delete_category,
     list_pending,
@@ -29,6 +29,7 @@ from analysis.storage.db import (
     get_analysis_sessionmaker,
     get_read_sessionmaker,
 )
+from analysis.storage.orm import UserORM
 
 router = APIRouter(tags=["categories"])
 
@@ -70,8 +71,8 @@ def _build_tree(nodes: list[CategoryNode]) -> list[CategoryTreeNode]:
 
 @router.get("/categories", response_model=list[CategoryTreeNode])
 async def get_category_tree(
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
 ) -> list[CategoryTreeNode]:
     """Вернуть дерево всех категорий (approved и pending), вложенное по parent_id."""
     nodes = await load_category_tree(session)
@@ -80,8 +81,8 @@ async def get_category_tree(
 
 @router.get("/categories/pending", response_model=list[CategoryOut])
 async def get_pending_categories(
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
 ) -> list[CategoryOut]:
     """Вернуть список неутверждённых категорий (очередь модерации)."""
     nodes = await list_pending(session)
@@ -91,8 +92,8 @@ async def get_pending_categories(
 @router.post("/categories/{id}/approve", response_model=ApproveResponse)
 async def approve_category(
     id: uuid.UUID,
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(require_role("admin")),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
 ) -> ApproveResponse:
     """Утвердить категорию. 404, если категория не найдена."""
     node = await set_approved(session, id, True)
@@ -105,8 +106,8 @@ async def approve_category(
 @router.post("/categories/{id}/reject", response_model=RejectResponse)
 async def reject_category(
     id: uuid.UUID,
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(require_role("admin")),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
 ) -> RejectResponse:
     """Удалить категорию (reject). 404, если категория не найдена."""
     deleted = await delete_category(session, id)
@@ -118,8 +119,8 @@ async def reject_category(
 
 @router.post("/classify", response_model=ClassifyRunOut)
 async def classify(
-    limit: Optional[int] = Query(default=None, ge=1),
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
+    limit: int | None = Query(default=None, ge=1),
 ) -> ClassifyRunOut:
     """Запустить прогон классификации новых items. Возвращает статистику прогона."""
     from analysis.classify.classifier import run_classification  # ленивый импорт

@@ -15,7 +15,6 @@ from analysis.score.formula import (
 )
 from analysis.score.models import ScoreParams, ScoreResult, ScoringConfig
 
-
 # ---------------------------------------------------------------------------
 # Вспомогательные фикстуры
 # ---------------------------------------------------------------------------
@@ -252,7 +251,7 @@ class TestLoadScoringConfig:
 
     def test_returns_default_when_no_overrides(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """При отсутствии override-полей в Settings возвращается ScoringConfig.default()."""
-        import unittest.mock as mock
+        from unittest import mock
 
         defaults = ScoringConfig.default()
 
@@ -272,7 +271,7 @@ class TestLoadScoringConfig:
 
     def test_returns_default_type(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Возвращаемое значение — экземпляр ScoringConfig."""
-        import unittest.mock as mock
+        from unittest import mock
 
         class _MinimalSettings:
             pass
@@ -284,7 +283,7 @@ class TestLoadScoringConfig:
 
     def test_json_string_weights_are_parsed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """JSON-строка в scoring_weights корректно парсится."""
-        import unittest.mock as mock
+        from unittest import mock
 
         class _SettingsWithJsonWeights:
             scoring_weights = '{"relevance": 0.9, "novelty": 0.1}'
@@ -299,7 +298,7 @@ class TestLoadScoringConfig:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """При невалидном JSON в scoring_weights используется default."""
-        import unittest.mock as mock
+        from unittest import mock
 
         class _SettingsWithBadWeights:
             scoring_weights = "{not: valid json}"
@@ -312,7 +311,7 @@ class TestLoadScoringConfig:
 
     def test_json_string_tiers_are_parsed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """JSON-строка в scoring_tiers корректно парсится."""
-        import unittest.mock as mock
+        from unittest import mock
 
         tiers_json = '[["X", 0.9], ["Y", 0.0]]'
 
@@ -326,7 +325,7 @@ class TestLoadScoringConfig:
 
     def test_float_overrides_are_applied(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Числовые поля escalation применяются из Settings."""
-        import unittest.mock as mock
+        from unittest import mock
 
         class _SettingsWithEscalation:
             escalate_min_confidence = 0.70

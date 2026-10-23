@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 @router.post("", response_model=JobResponse, status_code=202)
 async def create_job(
     req: CreateJobRequest,
-    orchestrator: Orchestrator = Depends(get_orchestrator),
+    orchestrator: Annotated[Orchestrator, Depends(get_orchestrator)],
 ) -> JobResponse:
     try:
         source = get_source(req.source)
@@ -37,7 +38,7 @@ async def create_job(
     async def _run() -> None:
         try:
             await orchestrator.run_job(job_id, source)
-        except Exception:  # noqa: BLE001 — статус уже зафиксирован в job
+        except Exception:
             logger.exception("Background job %s failed", job_id)
 
     asyncio.create_task(_run())

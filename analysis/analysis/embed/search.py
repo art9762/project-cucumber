@@ -16,7 +16,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from analysis.embed.models import SearchHit
 from analysis.storage.orm import ItemAnalysisORM, ItemEmbeddingORM, ItemReadORM
 
-
 # ---------------------------------------------------------------------------
 # Internal cosine helper — defined here to avoid importing encoder.py
 # (which would transitively pull fastembed when not installed).
@@ -183,7 +182,10 @@ async def _search_sqlite(
 
     scored: list[tuple[float, Any, Any, Any]] = []
     for emb_orm, item_orm, analysis_orm in rows:
-        vec = list(emb_orm.embedding)
+        embedding = emb_orm.embedding
+        if embedding is None:
+            continue
+        vec = list(embedding)
         dist = _cosine_distance(query_vec, vec)
         scored.append((dist, emb_orm, item_orm, analysis_orm))
 

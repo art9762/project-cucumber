@@ -33,7 +33,7 @@ class MockSource:
 class FakeRepo:
     """In-memory репозиторий: дедуп по (source, external_id) как в Postgres-upsert."""
 
-    def __init__(self, session) -> None:  # noqa: ANN001 — session игнорируем
+    def __init__(self, session) -> None:
         # Общее состояние между инстансами — имитируем единую БД.
         self.store = _SHARED
 

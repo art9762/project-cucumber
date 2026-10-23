@@ -7,14 +7,13 @@ sessionmaker'ов: в тестовой SQLite обе схемы живут на 
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
 
 from analysis.classify.classifier import run_classification
 from analysis.storage.orm import AnalysisRunORM, CategoryORM, ItemAnalysisORM, ItemReadORM
-
 
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
@@ -27,7 +26,7 @@ def _item(external_id: str = "x") -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 
@@ -201,12 +200,12 @@ async def test_per_item_failure_does_not_abort_run(analysis_sessionmaker) -> Non
         item1 = ItemReadORM(
             source="test", external_id="e1", title="Title e1",
             url="https://example.com/e1", tags=[],
-            fetched_at=datetime(2024, 1, 1, 1, tzinfo=timezone.utc),
+            fetched_at=datetime(2024, 1, 1, 1, tzinfo=UTC),
         )
         item2 = ItemReadORM(
             source="test", external_id="e2", title="Title e2",
             url="https://example.com/e2", tags=[],
-            fetched_at=datetime(2024, 1, 1, 2, tzinfo=timezone.utc),
+            fetched_at=datetime(2024, 1, 1, 2, tzinfo=UTC),
         )
         session.add_all([cat, item1, item2])
         await session.commit()
