@@ -21,7 +21,6 @@ from analysis.score.models import ScoreStats
 from analysis.storage.db import get_analysis_session
 from analysis.storage.orm import ItemAnalysisORM, ItemReadORM, UserORM
 
-
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
 # ---------------------------------------------------------------------------

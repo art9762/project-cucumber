@@ -47,7 +47,7 @@
 
 ## Quick start — запуск всего стека локально
 
-Нужны Docker (для Postgres c pgvector), Python 3.11+ и Node 18+.
+Нужны Docker (для Postgres c pgvector), Python 3.11+ и Node 22.12+ (CI и Docker используют Node 22).
 
 ### 1. Postgres (pgvector) — из движка
 
@@ -82,7 +82,7 @@ CORS_ORIGINS='http://localhost:5173,http://127.0.0.1:5173' \
 
 ```bash
 cd ui
-npm install
+npm ci
 cp .env.example .env.local      # VITE_API_BASE по умолчанию http://localhost:8113
 npm run dev                     # http://localhost:5173
 ```
@@ -96,6 +96,8 @@ npm run dev                     # http://localhost:5173
 - **Модуль анализа (API, CLI, env)** → [`analysis/README.md`](analysis/README.md)
 - **Панель управления** → [`ui/README.md`](ui/README.md)
 - **План анализа и фазы** → [`docs/analysis-plan.md`](docs/analysis-plan.md)
+
+Актуальные проверки, ограничения и оставшиеся задачи: [состояние проекта](docs/VALIDATION.md).
 
 ## Документация по фазам
 

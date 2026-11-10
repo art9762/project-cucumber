@@ -10,12 +10,17 @@ lists, which is fine for the Python cosine fallback.
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from analysis.embed.models import SearchHit
-from analysis.embed.search import _cosine_distance, find_competitors, search_by_text, search_by_vector
+from analysis.embed.search import (
+    _cosine_distance,
+    find_competitors,
+    search_by_text,
+    search_by_vector,
+)
 from analysis.storage.orm import (
     CategoryORM,
     ItemAnalysisORM,
@@ -23,13 +28,12 @@ from analysis.storage.orm import (
     ItemReadORM,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _item(external_id: str) -> ItemReadORM:
@@ -308,7 +312,7 @@ class _FakeEncoder:
     def __init__(self, vec: list[float]) -> None:
         self._vec = vec
 
-    def encode(self, text: str) -> list[float]:  # noqa: ARG002
+    def encode(self, text: str) -> list[float]:
         return self._vec
 
 
@@ -370,3 +374,25 @@ def test_search_hit_is_frozen() -> None:
     )
     with pytest.raises((AttributeError, TypeError)):
         hit.distance = 0.5  # type: ignore[misc]
+
+
+@pytest.mark.asyncio
+async def test_search_by_vector_ignores_json_null_embedding(analysis_sessionmaker) -> None:
+    """SQLite JSON null passes IS NOT NULL but must not enter cosine ranking."""
+    async with analysis_sessionmaker() as session:
+        missing = _item("json-null-vector")
+        valid = _item("valid-vector")
+        session.add_all([missing, valid])
+        await session.flush()
+        valid_id = valid.id
+        session.add_all([
+            ItemEmbeddingORM(item_id=missing.id, embedding=None, model="test", dim=4),
+            _embedding(valid, VEC_A),
+        ])
+        await session.commit()
+
+    async with analysis_sessionmaker() as session:
+        hits = await search_by_vector(session, VEC_A, limit=10)
+
+    assert [hit.item_id for hit in hits] == [str(valid_id)]
+    assert hits[0].distance == pytest.approx(0.0)

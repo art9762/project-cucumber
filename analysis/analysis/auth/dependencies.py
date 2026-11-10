@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,7 +57,7 @@ def clear_session_cookie(response: Response) -> None:
 
 async def get_optional_user(
     request: Request,
-    session: AsyncSession = Depends(get_analysis_session),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
 ) -> UserORM | None:
     """Вернуть текущего пользователя по cookie либо None (без 401)."""
     token = request.cookies.get(get_settings().session_cookie_name)
@@ -65,7 +67,7 @@ async def get_optional_user(
 
 
 async def get_current_user(
-    user: UserORM | None = Depends(get_optional_user),
+    user: Annotated[UserORM | None, Depends(get_optional_user)],
 ) -> UserORM:
     """Вернуть текущего пользователя или 401, если не аутентифицирован."""
     if user is None:
@@ -81,7 +83,7 @@ def require_role(role: str):
     required_rank = _ROLE_RANK.get(role, 0)
 
     async def _dependency(
-        user: UserORM = Depends(get_current_user),
+        user: Annotated[UserORM, Depends(get_current_user)],
     ) -> UserORM:
         if _ROLE_RANK.get(user.role, 0) < required_rank:
             raise HTTPException(

@@ -5,6 +5,8 @@ No auth on this router: collector is internal; the analysis gateway guards it.
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from find_engine.api.deps import get_scheduler
@@ -18,7 +20,7 @@ router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 
 @router.get("", response_model=ScheduleResponse)
-async def get_schedule(scheduler: Scheduler = Depends(get_scheduler)) -> ScheduleResponse:
+async def get_schedule(scheduler: Annotated[Scheduler, Depends(get_scheduler)]) -> ScheduleResponse:
     active = scheduler.current_schedules()
     schedules = {src: active.get(src, "") for src in available_sources()}
     return ScheduleResponse(schedules=schedules)
@@ -28,7 +30,7 @@ async def get_schedule(scheduler: Scheduler = Depends(get_scheduler)) -> Schedul
 async def update_schedule(
     source: str,
     body: ScheduleUpdateRequest,
-    scheduler: Scheduler = Depends(get_scheduler),
+    scheduler: Annotated[Scheduler, Depends(get_scheduler)],
 ) -> ScheduleResponse:
     if source not in available_sources():
         raise HTTPException(status_code=404, detail=f"Unknown source {source!r}")

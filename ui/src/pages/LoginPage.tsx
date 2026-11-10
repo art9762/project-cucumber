@@ -62,7 +62,7 @@ export function LoginPage() {
         </div>
         <form
           onSubmit={onSubmit}
-          className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/70 p-6 shadow-lg shadow-black/20 backdrop-blur-sm"
+          className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/70 p-6 shadow-lg shadow-black/20 backdrop-blur-xs"
         >
           <Input
             label="Username"

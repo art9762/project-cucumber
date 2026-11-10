@@ -1,9 +1,8 @@
 name: CI
 
-# Lint + type-check + tests for all three services. Python tests run on
-# in-memory SQLite (see each tests/conftest.py), so NO Postgres service is
-# needed and nothing hits the network — fastembed and the Anthropic/Trinity
-# client are stubbed in tests.
+# Lint + type-check + tests for all three services. Analysis uses in-memory
+# SQLite; search-engine additionally exercises PostgreSQL-specific upserts and
+# schedules in an isolated CI database. External model/API clients are stubbed.
 on:
   push:
     branches: [main]
@@ -49,6 +48,22 @@ jobs:
   search-engine:
     name: search-engine (ruff · mypy · pytest)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cucumber_test
+          POSTGRES_PASSWORD: cucumber_test
+          POSTGRES_DB: cucumber_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cucumber_test -d cucumber_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DB_URL: postgresql+asyncpg://cucumber_test:cucumber_test@localhost:5432/cucumber_test
     defaults:
       run:
         # Directory name contains a space — quoting handled by YAML string.
@@ -85,7 +100,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
@@ -95,3 +110,6 @@ jobs:
       # `npm run build` runs `tsc --noEmit && vite build` — covers typecheck.
       - name: Build
         run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit

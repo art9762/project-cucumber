@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -15,7 +15,7 @@ from analysis.storage.selector import select_new_items
 
 def _dt(hour: int) -> datetime:
     """Хелпер: UTC datetime для заданного часа."""
-    return datetime(2024, 1, 1, hour, 0, 0, tzinfo=timezone.utc)
+    return datetime(2024, 1, 1, hour, 0, 0, tzinfo=UTC)
 
 
 def _item(source: str = "test", external_id: str = "x", fetched_at: datetime | None = None) -> ItemReadORM:

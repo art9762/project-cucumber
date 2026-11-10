@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timezone
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -75,7 +75,7 @@ class TestNormalizeWithUrl:
     def test_created_at_utc(self, source: RedditSource, post_with_url: dict) -> None:
         item = source.normalize(_make_raw(post_with_url))
         assert item.created_at is not None
-        assert item.created_at.tzinfo == timezone.utc
+        assert item.created_at.tzinfo == UTC
         assert item.created_at.timestamp() == post_with_url["created_utc"]
 
 

@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -24,7 +24,7 @@ from analysis.storage.orm import AnalysisRunORM, ItemEmbeddingORM, ItemReadORM
 
 def _utcnow() -> datetime:
     """Вернуть текущее UTC-время."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def _embed_item(
@@ -100,7 +100,7 @@ async def run_embedding(
             # Шаг 3: построить тексты и вызвать encode_batch (CPU-bound, вне savepoint).
             if items:
                 # Ленивый импорт чтобы не тянуть fastembed при импорте модуля.
-                from analysis.embed.encoder import build_embed_text  # noqa: PLC0415
+                from analysis.embed.encoder import build_embed_text
 
                 texts = [build_embed_text(it) for it in items]
                 vecs: list[list[float]] = encoder.encode_batch(texts)  # type: ignore[attr-defined]

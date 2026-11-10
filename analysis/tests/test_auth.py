@@ -13,7 +13,8 @@ get_analysis_session переопределяется на сессию из э�
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 import pytest
 import pytest_asyncio
@@ -26,7 +27,6 @@ from analysis.auth.hashing import hash_password, verify_password
 from analysis.auth.sessions import create_session, resolve_session, revoke_session
 from analysis.storage.db import get_analysis_session
 from analysis.storage.orm import SessionORM, UserORM
-
 
 # ---------------------------------------------------------------------------
 # hashing
@@ -90,7 +90,7 @@ async def test_session_expired(analysis_sessionmaker) -> None:
             SessionORM(
                 token=token,
                 user_id=uid,
-                expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+                expires_at=datetime.now(UTC) - timedelta(hours=1),
             )
         )
         await session.commit()
@@ -142,7 +142,7 @@ def _make_auth_app(sessionmaker) -> FastAPI:
     app.include_router(auth_mod.router)
 
     @app.get("/admin-only")
-    async def _admin_only(_user=Depends(require_role("admin"))) -> dict:
+    async def _admin_only(_user: Annotated[UserORM, Depends(require_role("admin"))]) -> dict:
         return {"ok": True}
 
     app.dependency_overrides[get_analysis_session] = _fake_session_override(sessionmaker)

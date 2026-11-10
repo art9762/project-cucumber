@@ -6,14 +6,13 @@ Encoder заглушается фейковым объектом с детерм
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
 
 from analysis.embed.embedder import run_embedding
 from analysis.storage.orm import AnalysisRunORM, ItemEmbeddingORM, ItemReadORM
-
 
 # ---------------------------------------------------------------------------
 # Фейковый Encoder
@@ -51,7 +50,7 @@ def _item(external_id: str, fetched_dt: datetime | None = None) -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=fetched_dt or datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 
@@ -144,8 +143,8 @@ async def test_per_item_failure_does_not_abort_run(analysis_sessionmaker, monkey
     monkeypatch.setattr(embedder_mod, "_embed_item", _failing_embed_item)
 
     async with analysis_sessionmaker() as session:
-        item_a = _item("emb_fail_a", datetime(2024, 1, 1, 1, tzinfo=timezone.utc))
-        item_b = _item("emb_fail_b", datetime(2024, 1, 1, 2, tzinfo=timezone.utc))
+        item_a = _item("emb_fail_a", datetime(2024, 1, 1, 1, tzinfo=UTC))
+        item_b = _item("emb_fail_b", datetime(2024, 1, 1, 2, tzinfo=UTC))
         session.add_all([item_a, item_b])
         await session.commit()
         item_b_id = item_b.id
@@ -222,7 +221,7 @@ async def test_empty_table_no_error(analysis_sessionmaker) -> None:
 async def test_multiple_items_all_embedded(analysis_sessionmaker) -> None:
     """Несколько items — все получают корректный эмбеддинг."""
     async with analysis_sessionmaker() as session:
-        items = [_item(f"multi{i}", datetime(2024, 1, i + 1, tzinfo=timezone.utc)) for i in range(3)]
+        items = [_item(f"multi{i}", datetime(2024, 1, i + 1, tzinfo=UTC)) for i in range(3)]
         session.add_all(items)
         await session.commit()
         item_ids = [it.id for it in items]

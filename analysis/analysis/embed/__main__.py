@@ -32,7 +32,7 @@ async def _amain() -> None:
     args = _parse_args()
 
     # Encoder импортируется лениво, чтобы fastembed не грузился при импорте модуля.
-    from analysis.embed.encoder import Encoder  # noqa: PLC0415
+    from analysis.embed.encoder import Encoder
 
     encoder = Encoder(model_name=args.model)
 

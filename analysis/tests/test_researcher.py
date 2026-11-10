@@ -7,7 +7,7 @@ build_research_prompt и parse_research заглушаются через monkey
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 import pytest
@@ -51,7 +51,7 @@ def _item(external_id: str) -> ItemReadORM:
         title=f"Title {external_id}",
         url=f"https://example.com/{external_id}",
         tags=[],
-        fetched_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        fetched_at=datetime(2024, 1, 1, tzinfo=UTC),
     )
 
 
@@ -62,7 +62,7 @@ def _trinity() -> AsyncMock:
     return mock
 
 
-def _patch_prompt(monkeypatch) -> None:  # noqa: ANN001
+def _patch_prompt(monkeypatch) -> None:
     """Заглушить build_research_prompt."""
     monkeypatch.setattr(
         "analysis.research.researcher.build_research_prompt",
@@ -70,7 +70,7 @@ def _patch_prompt(monkeypatch) -> None:  # noqa: ANN001
     )
 
 
-def _patch_parse_ok(monkeypatch, result: ResearchResult = _STUB_RESULT) -> None:  # noqa: ANN001
+def _patch_parse_ok(monkeypatch, result: ResearchResult = _STUB_RESULT) -> None:
     """Заглушить parse_research — всегда возвращает result."""
     monkeypatch.setattr(
         "analysis.research.researcher.parse_research",

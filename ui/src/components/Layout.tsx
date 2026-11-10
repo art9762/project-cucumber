@@ -78,7 +78,7 @@ export function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-4 border-b border-border bg-surface/40 px-6 py-3.5 backdrop-blur-sm">
+        <header className="flex items-center justify-between gap-4 border-b border-border bg-surface/40 px-6 py-3.5 backdrop-blur-xs">
           <div className="md:hidden">
             <HealthDot />
           </div>

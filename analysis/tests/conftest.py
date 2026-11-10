@@ -13,7 +13,7 @@ before_insert — как сделано для repository-тестов движ�
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest_asyncio
 from sqlalchemy import event
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @pytest_asyncio.fixture
@@ -33,7 +33,7 @@ async def analysis_sessionmaker():
 
     # server_default'ы Postgres недоступны в SQLite — заполняем в Python.
     @event.listens_for(orm.ItemReadORM, "before_insert")
-    def _item_defaults(mapper, connection, target):  # noqa: ANN001
+    def _item_defaults(mapper, connection, target):
         if target.id is None:
             target.id = uuid.uuid4()
 
@@ -48,12 +48,12 @@ async def analysis_sessionmaker():
     ):
 
         @event.listens_for(model, "before_insert")
-        def _id_default(mapper, connection, target):  # noqa: ANN001
+        def _id_default(mapper, connection, target):
             if getattr(target, "id", None) is None:
                 target.id = uuid.uuid4()
 
     @event.listens_for(orm.UserORM, "before_insert")
-    def _user_defaults(mapper, connection, target):  # noqa: ANN001
+    def _user_defaults(mapper, connection, target):
         if target.role is None:
             target.role = "viewer"
         if target.is_active is None:
@@ -62,27 +62,27 @@ async def analysis_sessionmaker():
             target.created_at = _utcnow()
 
     @event.listens_for(orm.SessionORM, "before_insert")
-    def _session_created(mapper, connection, target):  # noqa: ANN001
+    def _session_created(mapper, connection, target):
         if target.created_at is None:
             target.created_at = _utcnow()
 
     @event.listens_for(orm.ItemResearchORM, "before_insert")
-    def _research_at(mapper, connection, target):  # noqa: ANN001
+    def _research_at(mapper, connection, target):
         if target.researched_at is None:
             target.researched_at = _utcnow()
 
     @event.listens_for(orm.ItemEmbeddingORM, "before_insert")
-    def _embedded_at(mapper, connection, target):  # noqa: ANN001
+    def _embedded_at(mapper, connection, target):
         if target.embedded_at is None:
             target.embedded_at = _utcnow()
 
     @event.listens_for(orm.CategoryORM, "before_insert")
-    def _cat_created(mapper, connection, target):  # noqa: ANN001
+    def _cat_created(mapper, connection, target):
         if target.created_at is None:
             target.created_at = _utcnow()
 
     @event.listens_for(orm.ItemAnalysisORM, "before_insert")
-    def _ia_analyzed(mapper, connection, target):  # noqa: ANN001
+    def _ia_analyzed(mapper, connection, target):
         if target.analyzed_at is None:
             target.analyzed_at = _utcnow()
 

@@ -8,13 +8,9 @@ fastembed импортируется лениво внутри метода, ч�
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
 
 from analysis.config import get_settings
 from analysis.storage.orm import EMBEDDING_DIM, ItemReadORM
-
-if TYPE_CHECKING:
-    pass
 
 # Максимальная длина body для текста эмбеддинга (зеркало _BODY_MAX_CHARS в prompt.py).
 _BODY_MAX_CHARS = 2000
@@ -42,7 +38,7 @@ class Encoder:
     def _get_model(self) -> object:
         """Ленивая загрузка и кэш TextEmbedding."""
         if self._model is None:
-            from fastembed import TextEmbedding  # noqa: PLC0415
+            from fastembed import TextEmbedding
 
             self._model = TextEmbedding(self._model_name)
         return self._model

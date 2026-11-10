@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
@@ -16,7 +16,6 @@ import pytest
 
 from analysis.research.models import Competitor, ResearchResult
 from analysis.research.prompt import build_research_prompt, parse_research
-
 
 # ---------------------------------------------------------------------------
 # Вспомогательные фабрики
@@ -43,7 +42,7 @@ def _make_item(
         author=author,
         score=score,
         tags=tags or [],
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         fetched_at=None,
     )
 

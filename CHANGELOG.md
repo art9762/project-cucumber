@@ -3,6 +3,27 @@
 Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [Unreleased]
+
+### Fixed
+
+- Dashboard totals now aggregate the entire corpus, including unscored collected
+  items, rather than a capped tierlist response.
+- Restored Python lint and type checks; collector error handling preserves
+  malformed upstream responses and semantic search ignores JSON-null vectors.
+- Updated the UI build/router dependencies to remove the 15 npm advisories
+  confirmed on 2026-10-23, including the Tailwind 3 dependency chain.
+
+### Changed
+
+- Vite 7.3, React Router 7, and Tailwind 4 with the Vite plugin; React 18 stays.
+  UI CI/build containers use Node 22. Browser baseline: Safari 16.4+, Chrome
+  111+, Firefox 128+.
+- PostgreSQL integration tests opt in through `TEST_DB_URL`, isolate each test
+  in a temporary schema, and fail if the configured test database is unavailable.
+  CI now provisions PostgreSQL 16 instead of skipping these tests.
+- UI CI audits the complete dependency tree after its production build.
+
 ## [1.0.2] — 2026-06-12
 
 Управление сбором (collection) из панели: ручной запуск и расписание.

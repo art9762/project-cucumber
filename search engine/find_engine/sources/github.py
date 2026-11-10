@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -94,9 +94,7 @@ class GithubSource:
         created_raw: str | None = repo.get("created_at")
         created_at: datetime | None = None
         if created_raw:
-            created_at = datetime.fromisoformat(
-                created_raw.replace("Z", "+00:00")
-            ).astimezone(timezone.utc)
+            created_at = datetime.fromisoformat(created_raw).astimezone(UTC)
         return Item(
             source="github",
             external_id=str(repo["id"]),

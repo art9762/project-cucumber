@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import timezone
+from datetime import UTC
 from pathlib import Path
 
 from find_engine.config import Settings
@@ -65,7 +65,7 @@ def test_normalize_created_at_is_tz_aware() -> None:
     item = _make_source().normalize(raw)
     assert item.created_at is not None
     assert item.created_at.tzinfo is not None
-    assert item.created_at.tzinfo == timezone.utc
+    assert item.created_at.tzinfo == UTC
 
 
 def test_normalize_source_field() -> None:

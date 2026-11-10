@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +31,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def login(
     body: LoginIn,
     response: Response,
-    session: AsyncSession = Depends(get_analysis_session),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
 ) -> UserOut:
     """Проверить логин/пароль, создать сессию, выставить cookie. 401 при ошибке."""
     row = await session.execute(
@@ -55,7 +57,7 @@ async def login(
 async def logout(
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(get_analysis_session),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
 ) -> Response:
     """Отозвать сессию (если есть) и очистить cookie. 204 в любом случае."""
     token = request.cookies.get(get_settings().session_cookie_name)
@@ -67,6 +69,6 @@ async def logout(
 
 
 @router.get("/me", response_model=UserOut)
-async def me(user: UserORM = Depends(get_current_user)) -> UserOut:
+async def me(user: Annotated[UserORM, Depends(get_current_user)]) -> UserOut:
     """Текущий пользователь. 401, если не аутентифицирован."""
     return UserOut(username=user.username, role=user.role)

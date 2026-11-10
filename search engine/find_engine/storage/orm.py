@@ -40,7 +40,7 @@ class ItemORM(Base):
     created_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     fetched_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
 
-    raw_records: Mapped[list["RawRecordORM"]] = relationship(
+    raw_records: Mapped[list[RawRecordORM]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )
 

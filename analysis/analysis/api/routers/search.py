@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,7 @@ from analysis.storage.db import (
     get_analysis_sessionmaker,
     get_read_sessionmaker,
 )
+from analysis.storage.orm import UserORM
 
 router = APIRouter(tags=["search"])
 
@@ -30,7 +31,7 @@ def _get_encoder() -> object:
     """Вернуть (или создать при первом вызове) синглтон Encoder."""
     global _encoder
     if _encoder is None:
-        from analysis.embed.encoder import Encoder  # noqa: PLC0415
+        from analysis.embed.encoder import Encoder
 
         _encoder = Encoder()
     return _encoder
@@ -62,11 +63,11 @@ def _hit_to_out(hit: SearchHit) -> SearchHitOut:
 @router.post("/search", response_model=list[SearchHitOut])
 async def search_items(
     body: SearchQueryIn,
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
 ) -> list[SearchHitOut]:
     """Семантический поиск: текст → top-K ближайших items по косинусу."""
-    from analysis.embed.search import search_by_text  # noqa: PLC0415
+    from analysis.embed.search import search_by_text
 
     encoder = _get_encoder()
     hits = await search_by_text(session, encoder, body.query, limit=body.limit)
@@ -76,12 +77,12 @@ async def search_items(
 @router.get("/items/{item_id}/competitors", response_model=list[SearchHitOut])
 async def get_competitors(
     item_id: uuid.UUID,
-    limit: Optional[int] = Query(default=10, ge=1),
-    session: AsyncSession = Depends(get_analysis_session),
-    _user=Depends(get_current_user),
+    session: Annotated[AsyncSession, Depends(get_analysis_session)],
+    _user: Annotated[UserORM, Depends(get_current_user)],
+    limit: int | None = Query(default=10, ge=1),
 ) -> list[SearchHitOut]:
     """Поиск конкурентов: похожие items по косинусу к вектору item_id."""
-    from analysis.embed.search import find_competitors  # noqa: PLC0415
+    from analysis.embed.search import find_competitors
 
     hits = await find_competitors(session, item_id, limit=limit or 10)
     return [_hit_to_out(h) for h in hits]
@@ -89,11 +90,11 @@ async def get_competitors(
 
 @router.post("/embed", response_model=EmbedRunOut)
 async def run_embed(
-    limit: Optional[int] = Query(default=None, ge=1),
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
+    limit: int | None = Query(default=None, ge=1),
 ) -> EmbedRunOut:
     """Запустить прогон эмбеддинга невекторизованных items. Возвращает статистику."""
-    from analysis.embed.embedder import run_embedding  # noqa: PLC0415
+    from analysis.embed.embedder import run_embedding
 
     encoder = _get_encoder()
     stats = await run_embedding(

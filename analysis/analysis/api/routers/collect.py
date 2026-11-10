@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import uuid as _uuid
+from typing import Annotated, NoReturn
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -22,6 +23,7 @@ from analysis.api.collect_schemas import (
 )
 from analysis.auth.dependencies import require_role
 from analysis.config import get_settings
+from analysis.storage.orm import UserORM
 
 router = APIRouter(prefix="/collect", tags=["collect"])
 
@@ -34,21 +36,21 @@ def _collector_url(path: str) -> str:
     return f"{base}{path}"
 
 
-def _propagate_error(e: httpx.HTTPStatusError) -> None:
+def _propagate_error(e: httpx.HTTPStatusError) -> NoReturn:
     try:
         body = e.response.json()
         detail = body["detail"] if isinstance(body, dict) and "detail" in body else body
-    except Exception:
+    except ValueError:
         detail = e.response.text or e.response.reason_phrase
     raise HTTPException(status_code=e.response.status_code, detail=detail)
 
 
-def _unavailable() -> None:
+def _unavailable() -> NoReturn:
     raise HTTPException(status_code=502, detail="collector unavailable")
 
 
 @router.get("/sources", response_model=SourcesOut)
-async def get_sources(_user=Depends(require_role("admin"))) -> SourcesOut:
+async def get_sources(_user: Annotated[UserORM, Depends(require_role("admin"))]) -> SourcesOut:
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             r = await client.get(_collector_url("/health"))
@@ -64,7 +66,7 @@ async def get_sources(_user=Depends(require_role("admin"))) -> SourcesOut:
 async def create_job(
     body: CreateCollectJob,
     response: Response,
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
 ) -> CollectJobOut:
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
@@ -79,7 +81,10 @@ async def create_job(
 
 
 @router.get("/jobs/{job_id}", response_model=CollectJobOut)
-async def get_job(job_id: _uuid.UUID, _user=Depends(require_role("admin"))) -> CollectJobOut:
+async def get_job(
+    job_id: _uuid.UUID,
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
+) -> CollectJobOut:
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             r = await client.get(_collector_url(f"/jobs/{job_id}"))
@@ -92,7 +97,7 @@ async def get_job(job_id: _uuid.UUID, _user=Depends(require_role("admin"))) -> C
 
 
 @router.get("/schedule", response_model=ScheduleOut)
-async def get_schedule(_user=Depends(require_role("admin"))) -> ScheduleOut:
+async def get_schedule(_user: Annotated[UserORM, Depends(require_role("admin"))]) -> ScheduleOut:
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             r = await client.get(_collector_url("/schedule"))
@@ -108,7 +113,7 @@ async def get_schedule(_user=Depends(require_role("admin"))) -> ScheduleOut:
 async def update_schedule(
     source: str,
     body: ScheduleUpdateRequest,
-    _user=Depends(require_role("admin")),
+    _user: Annotated[UserORM, Depends(require_role("admin"))],
 ) -> ScheduleOut:
     if not _SOURCE_RE.match(source):
         raise HTTPException(status_code=404, detail="unknown source")

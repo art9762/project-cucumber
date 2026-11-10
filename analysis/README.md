@@ -51,6 +51,7 @@ cp .env.example .env   # заполнить ANTHROPIC_AUTH_TOKEN и DSN при �
 | Метод | Путь | Параметры | Ответ | Auth |
 |-------|------|-----------|-------|------|
 | GET | `/health` | — | `HealthResponse` `{status, database, trinity_configured}` | — |
+| GET | `/dashboard/stats` | — | `DashboardStatsOut` `{total_items, scored_items, unscored_items, researched_items, with_competitors, tier_counts}` | viewer+ |
 | POST | `/auth/login` | body `{username, password}` | `UserOut` `{username, role}` + выставляет cookie | — |
 | POST | `/auth/logout` | — | `204`, чистит cookie | — |
 | GET | `/auth/me` | — | `UserOut` `{username, role}` | viewer+ |
@@ -70,6 +71,11 @@ cp .env.example .env   # заполнить ANTHROPIC_AUTH_TOKEN и DSN при �
 | POST | `/embed` | query `limit?` | `EmbedRunOut` `{seen, embedded, failed, model, dim, errors}` | admin |
 
 Замечания по контракту:
+- `/dashboard/stats` считает всю базу одним SQL-запросом без лимита: `total_items`
+  включает ещё не классифицированные идеи, `scored_items` — записи с заданным
+  `coefficient` (включая `0.0`), `unscored_items` — разницу этих счётчиков.
+  `researched_items` считает результаты ресёрча, `with_competitors` — результаты
+  с непустым сохранённым списком конкурентов; `tier_counts` всегда содержит S–D.
 - `/items/{id}/competitors` возвращает `SearchHitOut[]` (соседи по вектору), а не
   `CompetitorOut`. `CompetitorOut` встречается только вложенным в
   `ItemResearchOut.competitors` (конкуренты, найденные веб-ресёрчем).

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import literal_column, select, text
@@ -14,7 +14,7 @@ from find_engine.storage.orm import ItemORM, JobORM, RawRecordORM, SourceSchedul
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Repository:

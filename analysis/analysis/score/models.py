@@ -83,7 +83,7 @@ class ScoringConfig:
     escalate_boundary_margin: float
 
     @classmethod
-    def default(cls) -> "ScoringConfig":
+    def default(cls) -> ScoringConfig:
         """Дефолтная конфигурация: актуальность доминирует; издержки вычитаются."""
         return cls(
             weights={
